@@ -1,0 +1,77 @@
+server:
+  port: 8020
+
+management:
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        # 对外暴露的 Actuator 端点列表
+        include:
+          # 健康检查端点
+          - health
+          # 指标采集端点
+          - metrics
+          # 应用信息端点
+          - info
+          # 配置刷新端点
+          - refresh
+
+spring:
+  application:
+    name: ReceptionBackendSystem
+  security:
+    user:
+      name: admin          # 默认用户名
+      password: admin123    # 默认密码
+  servlet:
+    multipart:
+      max-file-size: 4096MB
+      max-request-size: 4096MB
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/
+    username:
+    password:
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 2000
+
+  jpa:
+    hibernate:
+      ddl-auto: create  # 每次启动时重新创建表结构
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+  data:
+    redis:
+      port: 6379
+      password: redis_YH22Ad
+      database: 4
+      timeout: 10000ms
+      host: 127.0.0.1
+
+logging:
+  level:
+    root: info
+    top.foxball.wsbackend: Debug
+  file:
+    name: ./logs/app.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr([%thread]){cyan} %clr(%-5level){} %clr(%logger{50}){cyan} - %clr(%msg%n){magenta}"
+
+wsbackend:
+  jwt:
+    issuer: wsbackend
+    secret: ${WSBACKEND_JWT_SECRET:replace-this-with-a-strong-jwt-secret-key-at-least-32-bytes}
+    token-expire-days: 7
