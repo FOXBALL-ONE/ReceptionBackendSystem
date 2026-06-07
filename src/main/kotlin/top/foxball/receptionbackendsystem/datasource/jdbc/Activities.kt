@@ -55,4 +55,47 @@ data class Activities(
     @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
     var carList: MutableList<Car> = mutableListOf(),
 
+    var mealList: MutableList<MealItem> = mutableListOf(),
+
+    var hostedList: MutableList<HostedItem> = mutableListOf(),
+
+    var inspectionPoints: MutableList<InspectionPointItem> = mutableListOf(),
+
+    var overviewOfTheCityAndCounty: MutableList<OverviewOfTheCityAndCountyItem> = mutableListOf(),
+)
+
+
+
+data class OverviewOfTheCityAndCountyItem(
+    var title: String? = null,
+    var topImageUrl: String? = null,
+    var description: MutableList<ParagraphContentItem> = mutableListOf(),
+)
+
+data class ParagraphContentItem(
+    var title: String? = null,
+    var content: String? = null,
+)
+
+data class MealItem(
+    var name: String? = null,
+    var description: String? = null,
+    var position: String? = null,
+    var time: LocalDateTime? = null,
+)
+
+data class HostedItem(
+    var roomNumber: String? = null,
+    var person: Person? = null,
+    var hostedColorsTag: HostedColorsTag? = null,
+)
+
+data class HostedColorsTag(
+    var name: String? = null,
+    var color: String? = null,
+)
+
+data class InspectionPointItem(
+    var imageURL: String? = null,
+    var description: String? = null,
 )

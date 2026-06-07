@@ -20,5 +20,6 @@ data class Person (
     @Column(name = "unit")
     var unit: String? = null,
 
-
+    @Column(name = "nick_name")
+    var nickName: String? = null,
 )

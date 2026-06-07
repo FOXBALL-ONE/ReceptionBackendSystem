@@ -26,21 +26,10 @@ data class Car(
     @Column(name = "driver_number")
     var driverNumber: String? = null,
 
-    @ElementCollection
-    @CollectionTable(
-        name = "car_passengers_on_board",
-        joinColumns = [JoinColumn(name = "car_id")]
-    )
-    @OrderColumn(name = "passenger_order")
+
     var passengersOnBoardList: MutableList<PassengersOnBoardItem> = mutableListOf(),
 
-    @ManyToOne
-    @JoinTable(
-        name = "car_passenger",
-        joinColumns = [JoinColumn(name = "car_id")],
-        inverseJoinColumns = [JoinColumn(name = "person_id")]
-    )
-    @OrderColumn(name = "passenger_order")
+
     var passengersList: MutableList<Person> = mutableListOf(),
 
     )
