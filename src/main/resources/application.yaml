@@ -32,9 +32,9 @@ spring:
       max-file-size: 4096MB
       max-request-size: 4096MB
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/
-    username:
-    password:
+    url: jdbc:postgresql://hz.doh.ink:5432/Reception
+    username: backend
+    password: hSxcEnNjDDFxppms
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -52,13 +52,6 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
-  data:
-    redis:
-      port: 6379
-      password: redis_YH22Ad
-      database: 4
-      timeout: 10000ms
-      host: 127.0.0.1
 
 logging:
   level:
@@ -70,8 +63,3 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr([%thread]){cyan} %clr(%-5level){} %clr(%logger{50}){cyan} - %clr(%msg%n){magenta}"
 
-wsbackend:
-  jwt:
-    issuer: wsbackend
-    secret: ${WSBACKEND_JWT_SECRET:replace-this-with-a-strong-jwt-secret-key-at-least-32-bytes}
-    token-expire-days: 7
