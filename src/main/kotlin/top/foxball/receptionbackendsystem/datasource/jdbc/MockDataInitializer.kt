@@ -4,8 +4,15 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import top.foxball.receptionbackendsystem.config.ImageProperties
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.time.LocalDate
 import java.time.LocalDateTime
+import javax.imageio.ImageIO
 
 /**
  * 启动模拟数据初始化器。
@@ -18,18 +25,21 @@ class MockDataInitializer(
     private val colorTagRepository: ColorTagRepository,
     private val personRepository: PersonRepository,
     private val promptServiceRepository: PromptServiceRepository,
+    private val imageRepository: ImageRepository,
+    private val imageProperties: ImageProperties,
 ) : ApplicationRunner {
 
     @Transactional
     override fun run(args: ApplicationArguments) {
         seedColorTags()
         seedPromptService()
+        val mockImages = seedMockImages()
 
         if (activitiesRepository.existsByUrl(MOCK_ACTIVITY_URL)) {
             return
         }
 
-        val savedActivity = activitiesRepository.save(createActivity())
+        val savedActivity = activitiesRepository.save(createActivity(mockImages))
         personRepository.saveAll(createPeople(savedActivity))
     }
 
@@ -143,7 +153,7 @@ class MockDataInitializer(
     }
 
     /** 创建活动主数据，并挂载可级联保存的子数据。 */
-    private fun createActivity(): Activities {
+    private fun createActivity(mockImages: Map<String, String>): Activities {
         val activity = Activities(
             url = MOCK_ACTIVITY_URL,
             masterTitle = "2026 夏季重点项目接待活动",
@@ -152,7 +162,7 @@ class MockDataInitializer(
             startTime = at(0, 9, 0),
             endTime = at(2, 18, 0),
             bannerTags = "重点项目,城市更新,产业协同,现场考察",
-            bannerUrl = "https://example.com/mock/banner/reception-2026.jpg",
+            bannerUrl = mockImagePath(mockImages, "0.png"),
             isAnimation = true,
             isTopNavigationBar = true,
             icp = "浙ICP备2026000001号-1",
@@ -160,11 +170,11 @@ class MockDataInitializer(
             isOpen = true,
             mealList = createMeals(),
             hostedList = createHostedList(),
-            inspectionPoints = createInspectionPoints(),
-            overviewOfTheCityAndCounty = createCityOverview(),
+            inspectionPoints = createInspectionPoints(mockImages),
+            overviewOfTheCityAndCounty = createCityOverview(mockImages),
         )
 
-        activity.schedules.addAll(createSchedules(activity))
+        activity.schedules.addAll(createSchedules(activity, mockImages))
         activity.carList.addAll(createCars(activity))
 
         return activity
@@ -184,29 +194,33 @@ class MockDataInitializer(
         hosted("B-0820", "孙雅", "商务楼", "#1570EF"),
     )
 
-    private fun createInspectionPoints(): MutableList<InspectionPointItem> = mutableListOf(
+    private fun createInspectionPoints(mockImages: Map<String, String>): MutableList<InspectionPointItem> = mutableListOf(
         inspectionPoint(
-            "digital-park",
+            mockImages,
+            "1.jpg",
             "数字产业园核心展示区，重点介绍招商成果、企业入驻和智慧园区运营能力。",
         ),
         inspectionPoint(
-            "riverfront",
+            mockImages,
+            "7.png",
             "滨水城市更新样板段，展示公共空间改造、慢行系统和文旅消费场景。",
         ),
         inspectionPoint(
-            "manufacturing",
+            mockImages,
+            "9.png",
             "先进制造示范工厂，展示自动化产线、质量追溯和绿色制造成果。",
         ),
         inspectionPoint(
-            "service-center",
+            mockImages,
+            "0.png",
             "产业服务中心，展示企业服务、项目审批、人才政策和金融支持体系。",
         ),
     )
 
-    private fun createCityOverview(): MutableList<OverviewOfTheCityAndCountyItem> = mutableListOf(
+    private fun createCityOverview(mockImages: Map<String, String>): MutableList<OverviewOfTheCityAndCountyItem> = mutableListOf(
         OverviewOfTheCityAndCountyItem(
             title = "城市概况",
-            topImageUrl = "$MOCK_IMAGE_BASE_URL/overview/city.jpg",
+            topImageUrl = mockImagePath(mockImages, "7.png"),
             description = mutableListOf(
                 paragraph("区位优势", "地处区域交通枢纽，公铁水空联运条件完善，面向长三角主要城市形成两小时通达圈。"),
                 paragraph("产业基础", "形成数字经济、先进制造、现代服务业协同发展的产业格局，重点平台承载能力持续提升。"),
@@ -214,7 +228,7 @@ class MockDataInitializer(
         ),
         OverviewOfTheCityAndCountyItem(
             title = "县域特色",
-            topImageUrl = "$MOCK_IMAGE_BASE_URL/overview/county.jpg",
+            topImageUrl = mockImagePath(mockImages, "9.png"),
             description = mutableListOf(
                 paragraph("生态资源", "山水资源丰富，生态廊道和滨水空间串联主要功能片区，适合发展文旅和康养产业。"),
                 paragraph("营商环境", "建立重大项目专班服务机制，审批、用地、金融和人才政策形成组合支持。"),
@@ -222,14 +236,15 @@ class MockDataInitializer(
         ),
     )
 
-    private fun createSchedules(activity: Activities): MutableList<Schedule> = mutableListOf(
+    private fun createSchedules(activity: Activities, mockImages: Map<String, String>): MutableList<Schedule> = mutableListOf(
         schedule(
             activity = activity,
             tags = "抵达,会见,欢迎",
             teams = listOf(
                 inspectionTeam(
                     name = "综合接待组",
-                    routeKey = "day-1",
+                    mockImages = mockImages,
+                    routeImageName = "1.jpg",
                     routeNode = listOf("高铁东站", "接待酒店", "市政中心", "湖畔会议中心"),
                     events = listOf(
                         event(0, 9, 30, 10, 10, "高铁站出站迎接并统一乘车", "高铁东站 VIP 出站口"),
@@ -244,7 +259,8 @@ class MockDataInitializer(
             teams = listOf(
                 inspectionTeam(
                     name = "产业考察组",
-                    routeKey = "day-2-industry",
+                    mockImages = mockImages,
+                    routeImageName = "7.png",
                     routeNode = listOf("接待酒店", "数字产业园", "先进制造示范工厂", "产业服务中心"),
                     events = listOf(
                         event(1, 9, 0, 10, 30, "考察数字产业园展示中心", "数字产业园 A 区"),
@@ -253,7 +269,8 @@ class MockDataInitializer(
                 ),
                 inspectionTeam(
                     name = "城市更新考察组",
-                    routeKey = "day-2-city",
+                    mockImages = mockImages,
+                    routeImageName = "9.png",
                     routeNode = listOf("接待酒店", "滨水更新样板段", "历史街区", "文旅综合体"),
                     events = listOf(
                         event(1, 9, 20, 11, 0, "考察滨水公共空间更新成果", "滨水城市客厅"),
@@ -268,7 +285,8 @@ class MockDataInitializer(
             teams = listOf(
                 inspectionTeam(
                     name = "返程保障组",
-                    routeKey = "day-3",
+                    mockImages = mockImages,
+                    routeImageName = "0.png",
                     routeNode = listOf("接待酒店", "项目服务中心", "高铁东站", "机场"),
                     events = listOf(
                         event(2, 9, 30, 10, 30, "活动复盘与后续事项确认", "接待酒店二楼会议室"),
@@ -336,10 +354,11 @@ class MockDataInitializer(
     )
 
     private fun inspectionPoint(
-        imageKey: String,
+        mockImages: Map<String, String>,
+        imageName: String,
         description: String,
     ) = InspectionPointItem(
-        imageURL = "$MOCK_IMAGE_BASE_URL/inspection/$imageKey.jpg",
+        imageURL = mockImagePath(mockImages, imageName),
         description = description,
     )
 
@@ -363,13 +382,13 @@ class MockDataInitializer(
 
     private fun inspectionTeam(
         name: String,
-        routeKey: String,
+        mockImages: Map<String, String>,
+        routeImageName: String,
         routeNode: List<String>,
         events: List<EventArrangementsItem>,
     ) = InspectionTeamItem(
         name = name,
-        routeUrl = "$MOCK_ROUTE_BASE_URL/$routeKey",
-        scheduleUrl = "$MOCK_SCHEDULE_BASE_URL/$routeKey.pdf",
+        routeUrl = mockImagePath(mockImages, routeImageName),
         routeNode = routeNode.toMutableList(),
         eventArrangements = events.toMutableList(),
     )
@@ -417,6 +436,95 @@ class MockDataInitializer(
     private fun personSeed(name: String): PersonSeed = PERSON_SEEDS_BY_NAME[name]
         ?: error("模拟人员不存在：$name")
 
+    /** 将项目 image 目录中的图片导入到配置的图片存储目录，并写入图片元数据表。 */
+    private fun seedMockImages(): Map<String, String> {
+        val sourceDir = mockImageSourceDir() ?: return emptyMap()
+        val importedImages = linkedMapOf<String, String>()
+
+        Files.newDirectoryStream(sourceDir).use { stream ->
+            stream
+                .filter { Files.isRegularFile(it) && it.isImageFile() }
+                .sortedBy { it.fileName.toString() }
+                .forEach { sourcePath ->
+                    val fileName = sourcePath.fileName.toString()
+                    importedImages[fileName] = importMockImage(sourcePath)
+                }
+        }
+
+        return importedImages
+    }
+
+    /** 将单张模拟图片复制到 Image.storage/mock 下，并创建或更新对应元数据。 */
+    private fun importMockImage(sourcePath: Path): String {
+        val fileName = sourcePath.fileName.toString()
+        val relativePath = imageProperties.normalizeRelativePath("mock/$fileName")
+        val targetPath = imageProperties.resolveStoragePath(relativePath)
+
+        Files.createDirectories(targetPath.parent)
+        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING)
+
+        val imageSize = runCatching { ImageIO.read(targetPath.toFile()) }.getOrNull()
+        val image = imageRepository.findByObjectKeyAndIsDeletedFalse(relativePath) ?: Image(
+            originalFilename = fileName,
+            storedFilename = fileName,
+            objectKey = relativePath,
+            storagePath = relativePath,
+            accessUrl = relativePath,
+            usageType = MOCK_IMAGE_USAGE_TYPE,
+        )
+
+        image.originalFilename = fileName
+        image.storedFilename = fileName
+        image.extension = sourcePath.extension()
+        image.contentType = Files.probeContentType(targetPath) ?: image.contentTypeFromExtension()
+        image.fileSize = Files.size(targetPath)
+        image.width = imageSize?.width
+        image.height = imageSize?.height
+        image.sha256 = sha256(targetPath)
+        image.objectKey = relativePath
+        image.storagePath = relativePath
+        image.accessUrl = relativePath
+        image.usageType = MOCK_IMAGE_USAGE_TYPE
+        image.isDeleted = false
+
+        imageRepository.save(image)
+        return relativePath
+    }
+
+    private fun mockImagePath(mockImages: Map<String, String>, imageName: String): String? = mockImages[imageName]
+
+    /** 按常见位置查找项目内的 image 目录，兼容源码目录和项目根目录两种放置方式。 */
+    private fun mockImageSourceDir(): Path? = MOCK_IMAGE_SOURCE_DIRS
+        .map { Paths.get(it).toAbsolutePath().normalize() }
+        .firstOrNull(Files::isDirectory)
+
+    private fun Path.isImageFile(): Boolean = extension() in IMAGE_EXTENSIONS
+
+    private fun Path.extension(): String = fileName.toString()
+        .substringAfterLast('.', missingDelimiterValue = "")
+        .lowercase()
+
+    private fun Image.contentTypeFromExtension(): String = when (extension) {
+        "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
+        "webp" -> "image/webp"
+        "gif" -> "image/gif"
+        else -> "application/octet-stream"
+    }
+
+    private fun sha256(path: Path): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        Files.newInputStream(path).use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
     private fun at(
         dayOffset: Long,
         hour: Int,
@@ -427,11 +535,15 @@ class MockDataInitializer(
 
     private companion object {
         const val MOCK_ACTIVITY_URL = "/activities/2026-summer-reception"
-        const val MOCK_IMAGE_BASE_URL = "https://example.com/mock"
-        const val MOCK_ROUTE_BASE_URL = "https://example.com/mock/routes"
-        const val MOCK_SCHEDULE_BASE_URL = "https://example.com/mock/schedules"
+        const val MOCK_IMAGE_USAGE_TYPE = "mock"
 
         val MOCK_START_DATE: LocalDate = LocalDate.of(2026, 6, 18)
+        val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "gif")
+        val MOCK_IMAGE_SOURCE_DIRS = listOf(
+            "image",
+            "images",
+            "src/main/kotlin/top/foxball/receptionbackendsystem/image",
+        )
 
         val COLOR_TAGS = listOf(
             ColorTagSeed("重要", "#D92D20"),
