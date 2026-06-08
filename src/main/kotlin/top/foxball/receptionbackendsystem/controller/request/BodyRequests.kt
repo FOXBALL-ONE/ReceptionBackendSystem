@@ -6,6 +6,7 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.Image
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
+import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
 
 /**
@@ -154,6 +155,14 @@ data class CreatePersonRequest(
 data class UpdatePersonRequest(
     val id: Int = 0,
     val person: Person = Person(),
+)
+
+/**
+ * 提示服务配置更新请求体。
+ */
+data class UpdatePromptServiceRequest(
+    val id: Int = 0,
+    val promptService: PromptService = PromptService(),
 )
 
 /**
