@@ -1,8 +1,16 @@
 package top.foxball.receptionbackendsystem.controller
 
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.*
-import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
+import top.foxball.receptionbackendsystem.controller.request.CreateScheduleRequest
+import top.foxball.receptionbackendsystem.controller.request.EmptyRequest
+import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
+import top.foxball.receptionbackendsystem.controller.request.ScheduleTagsRequest
+import top.foxball.receptionbackendsystem.controller.request.UpdateScheduleRequest
 import top.foxball.receptionbackendsystem.service.ScheduleService
 import top.foxball.receptionbackendsystem.shared.Response
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
@@ -18,42 +26,40 @@ class ScheduleController(
 ) {
 
     /** 查询全部日程。 */
-    @GetMapping
-    fun findAll(): ResponseEntity<Response> = ok(scheduleService.findAll())
+    @PostMapping("/list")
+    fun findAll(@RequestBody(required = false) request: EmptyRequest?): ResponseEntity<Response> =
+        ok(scheduleService.findAll())
 
     /** 根据主键查询日程。 */
-    @GetMapping("/{id}")
-    fun findById(@PathVariable id: Long): ResponseEntity<Response> = ok(scheduleService.findById(id))
+    @PostMapping("/find-by-id")
+    fun findById(@RequestBody request: LongIdRequest): ResponseEntity<Response> =
+        ok(scheduleService.findById(request.id))
 
     /** 查询指定活动下的全部日程。 */
-    @GetMapping("/activity/{activityId}")
-    fun findByActivityId(@PathVariable activityId: Int): ResponseEntity<Response> =
-        ok(scheduleService.findByActivityId(activityId))
+    @PostMapping("/find-by-activity")
+    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<Response> =
+        ok(scheduleService.findByActivityId(request.activityId))
 
     /** 根据日程标签模糊查询。 */
-    @GetMapping("/search")
-    fun findByScheduleTagsContaining(@RequestParam scheduleTags: String): ResponseEntity<Response> =
-        ok(scheduleService.findByScheduleTagsContaining(scheduleTags))
+    @PostMapping("/search")
+    fun findByScheduleTagsContaining(@RequestBody request: ScheduleTagsRequest): ResponseEntity<Response> =
+        ok(scheduleService.findByScheduleTagsContaining(request.scheduleTags))
 
     /** 在指定活动下创建日程。 */
-    @PostMapping("/activity/{activityId}")
-    fun create(
-        @PathVariable activityId: Int,
-        @RequestBody schedule: Schedule,
-    ): ResponseEntity<Response> = ok(scheduleService.create(activityId, schedule), "日程创建成功")
+    @PostMapping("/create")
+    fun create(@RequestBody request: CreateScheduleRequest): ResponseEntity<Response> =
+        ok(scheduleService.create(request.activityId, request.schedule), "日程创建成功")
 
     /** 更新日程信息。 */
-    @PutMapping("/{id}")
-    fun update(
-        @PathVariable id: Long,
-        @RequestBody schedule: Schedule,
-    ): ResponseEntity<Response> = ok(scheduleService.update(id, schedule), "日程更新成功")
+    @PostMapping("/update")
+    fun update(@RequestBody request: UpdateScheduleRequest): ResponseEntity<Response> =
+        ok(scheduleService.update(request.id, request.schedule), "日程更新成功")
 
     /** 删除日程。 */
-    @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Response> {
-        scheduleService.delete(id)
-        return ok(mapOf("id" to id), "日程删除成功")
+    @PostMapping("/delete")
+    fun delete(@RequestBody request: LongIdRequest): ResponseEntity<Response> {
+        scheduleService.delete(request.id)
+        return ok(mapOf("id" to request.id), "日程删除成功")
     }
 
     /** 使用统一响应结构返回成功结果。 */
