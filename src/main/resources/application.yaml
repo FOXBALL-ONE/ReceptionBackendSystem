@@ -53,6 +53,10 @@ spring:
         order_inserts: true
         order_updates: true
 
+Image:
+    storage: ./images
+    BaseURL: http://localhost:8080/images/
+
 logging:
   level:
     root: info
@@ -62,4 +66,3 @@ logging:
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr([%thread]){cyan} %clr(%-5level){} %clr(%logger{50}){cyan} - %clr(%msg%n){magenta}"
-

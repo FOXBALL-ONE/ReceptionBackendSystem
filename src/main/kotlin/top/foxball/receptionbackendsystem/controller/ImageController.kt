@@ -4,7 +4,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import top.foxball.receptionbackendsystem.controller.request.EmptyRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.ObjectKeyRequest
@@ -60,6 +62,15 @@ class ImageController(
     @PostMapping("/update")
     fun update(@RequestBody request: UpdateImageRequest): ResponseEntity<Response> =
         ok(imageService.update(request.id, request.image), "图片元数据更新成功")
+
+    /** 上传图片文件，并保存相对路径元数据。 */
+    @PostMapping("/upload")
+    fun upload(
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam(required = false) usageType: String?,
+        @RequestParam(required = false) uploadedBy: String?,
+    ): ResponseEntity<Response> =
+        ok(imageService.upload(file, usageType, uploadedBy), "图片上传成功")
 
     /** 软删除图片元数据。 */
     @PostMapping("/delete")

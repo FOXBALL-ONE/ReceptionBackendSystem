@@ -2,6 +2,7 @@ package top.foxball.receptionbackendsystem.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import top.foxball.receptionbackendsystem.config.ImageProperties
 import top.foxball.receptionbackendsystem.datasource.jdbc.*
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -16,7 +17,8 @@ class ReceptionViewService(
     private val activitiesRepository: ActivitiesRepository,
     private val personRepository: PersonRepository,
     private val carRepository: CarRepository,
-    private val promptServiceRepository: PromptServiceRepository
+    private val promptServiceRepository: PromptServiceRepository,
+    private val imageProperties: ImageProperties,
 ) {
 
     /**
@@ -35,8 +37,8 @@ class ReceptionViewService(
             "subtitle" to (activity?.subtitle ?: ""),
             "heroLabel" to activity?.bannerTags,
             "dateRange" to formatDateRange(activity?.startTime, activity?.endTime),
-            "bannerImage" to activity?.bannerUrl,
-            "heroImage" to activity?.bannerUrl,
+            "bannerImage" to imageUrl(activity?.bannerUrl),
+            "heroImage" to imageUrl(activity?.bannerUrl),
             "showLoading" to (activity?.isAnimation != false),
             "showMeetingLocation" to true,
             "serviceMode" to if (promptService?.attendanceInstructionsMode == true) 1 else 0,
@@ -75,7 +77,7 @@ class ReceptionViewService(
                 groups.add(
                     mapOf(
                         "name" to (team.name ?: "考察组"),
-                        "mapImage" to team.routeUrl,
+                        "mapImage" to imageUrl(team.routeUrl),
                         "route" to team.routeNode,
                         "meetings" to team.eventArrangements.map { event ->
                             mapOf(
@@ -196,7 +198,7 @@ class ReceptionViewService(
             mapOf(
                 "name" to "考察点${index + 1}",
                 "intro" to point.description,
-                "images" to listOfNotNull(point.imageURL)
+                "images" to listOfNotNull(imageUrl(point.imageURL))
             )
         } ?: emptyList()
     }
@@ -259,10 +261,13 @@ class ReceptionViewService(
         } ?: emptyList()
 
         return mapOf(
-            "image" to activity?.overviewOfTheCityAndCounty?.firstOrNull()?.topImageUrl,
+            "image" to imageUrl(activity?.overviewOfTheCityAndCounty?.firstOrNull()?.topImageUrl),
             "sections" to sections
         )
     }
+
+    /** 将展示接口中的图片字段转换为 index.html 可直接加载的 URL。 */
+    private fun imageUrl(rawPath: String?): String? = imageProperties.publicUrl(rawPath)
 
     private fun currentActivity(): Activities? {
         return activitiesRepository.findByIsOpenTrueOrderByStartTimeAsc().firstOrNull()
