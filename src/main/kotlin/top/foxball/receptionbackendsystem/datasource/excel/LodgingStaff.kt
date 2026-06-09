@@ -16,12 +16,12 @@ data class Staff(
 )
 
 data class LodgingStaffExcelRow(
-    @field:ExcelProperty(value = ["单位"], index = 0)
+    @field:ExcelProperty(value = ["工作人员联系方式", "单位"], index = 0)
     var unit: String? = null,
 
-    @field:ExcelProperty(value = ["联系人、电话"], index = 1)
+    @field:ExcelProperty(value = ["工作人员联系方式", "联系人、电话"], index = 1)
     var contact: String? = null,
 
-    @field:ExcelProperty(value = ["房号"], index = 2)
+    @field:ExcelProperty(value = ["工作人员联系方式", "房号"], index = 2)
     var roomNumber: String? = null,
 )

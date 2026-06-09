@@ -1,0 +1,197 @@
+package top.foxball.receptionbackendsystem.service.excel
+
+import com.alibaba.excel.EasyExcel
+import com.alibaba.excel.ExcelWriter
+import com.alibaba.excel.write.metadata.WriteSheet
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import top.foxball.receptionbackendsystem.datasource.excel.AttendanceGuidelinesItem
+import top.foxball.receptionbackendsystem.datasource.excel.CarExcelRow
+import top.foxball.receptionbackendsystem.datasource.excel.InspectionPointsItem
+import top.foxball.receptionbackendsystem.datasource.excel.LodgingItem
+import top.foxball.receptionbackendsystem.datasource.excel.LodgingStaffExcelRow
+import top.foxball.receptionbackendsystem.datasource.excel.MealItem as ExcelMealItem
+import top.foxball.receptionbackendsystem.datasource.excel.OverviewOfTheCityAndCountyExcelRow
+import top.foxball.receptionbackendsystem.datasource.excel.PersonnelItem
+import top.foxball.receptionbackendsystem.datasource.excel.ScheduleExcelRow
+import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
+import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
+import top.foxball.receptionbackendsystem.datasource.jdbc.Car
+import top.foxball.receptionbackendsystem.datasource.jdbc.HostedItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
+import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
+import java.io.OutputStream
+import java.time.format.DateTimeFormatter
+import kotlin.io.use
+
+@Service
+class ExcelDatabaseExportService(
+    private val activitiesRepository: ActivitiesRepository,
+) {
+    @Transactional(readOnly = true)
+    fun exportActivity(activityId: Int, outputStream: OutputStream) {
+        val activity = activitiesRepository.findById(activityId)
+            .orElseThrow { ResourceNotFoundException("活动不存在：$activityId") }
+
+        writeWorkbook(activity, outputStream)
+    }
+
+    @Transactional(readOnly = true)
+    fun exportActivity(url: String, outputStream: OutputStream) {
+        val activity = activitiesRepository.findByUrl(url)
+            ?: throw ResourceNotFoundException("活动不存在：$url")
+
+        writeWorkbook(activity, outputStream)
+    }
+
+    private fun writeWorkbook(activity: Activities, outputStream: OutputStream) {
+        EasyExcel.write(outputStream).build().use { writer ->
+            writer.write(activity.toPersonnelRows(), sheet(0, "人员名单", PersonnelItem::class.java))
+            writer.write(activity.toCarRows(), sheet(1, "乘车安排", CarExcelRow::class.java))
+            writer.write(activity.toMealRows(), sheet(2, "用餐安排", ExcelMealItem::class.java))
+            writer.write(activity.toLodgingRows(), sheet(3, "住宿安排", LodgingItem::class.java))
+            writer.write(activity.toLodgingStaffRows(), sheet(4, "工作人员", LodgingStaffExcelRow::class.java))
+            writer.write(activity.toScheduleRows(), sheet(5, "日程安排", ScheduleExcelRow::class.java))
+            writer.write(activity.toInspectionPointRows(), sheet(6, "考察点", InspectionPointsItem::class.java))
+            writer.write(activity.toAttendanceGuidelineRows(), sheet(7, "参会须知", AttendanceGuidelinesItem::class.java))
+            writer.write(activity.toOverviewRows(), sheet(8, "市县概况", OverviewOfTheCityAndCountyExcelRow::class.java))
+        }
+    }
+
+    private fun sheet(index: Int, name: String, head: Class<*>): WriteSheet =
+        EasyExcel.writerSheet(index, name).head(head).build()
+
+    private fun Activities.toPersonnelRows(): List<PersonnelItem> {
+        val teamNamesById = schedules
+            .flatMap(Schedule::inspectionTeamItem)
+            .mapNotNull { team -> team.id?.let { it to team.name } }
+            .toMap()
+
+        return personList.mapIndexed { index, person ->
+            PersonnelItem(
+                id = (index + 1).toLong(),
+                name = person.name,
+                unit = person.unit,
+                position = null,
+                inspectionTeam = person.inspectionTeamItemId?.let(teamNamesById::get),
+            )
+        }
+    }
+
+    private fun Activities.toCarRows(): List<CarExcelRow> =
+        carList.flatMap { car -> car.toCarRows() }
+
+    private fun Car.toCarRows(): List<CarExcelRow> {
+        val passengerNames = passengersList.mapNotNull { it.name?.trimToNull() }.ifEmpty { listOf<String?>(null) }
+        return passengerNames.mapIndexed { index, passengerName ->
+            val staff = passengersOnBoardList.getOrNull(index)
+            CarExcelRow(
+                carNumber = if (index == 0) carNumber else null,
+                plateNumber = null,
+                driver = if (index == 0) driver else null,
+                driverNumber = if (index == 0) driverNumber else null,
+                staffName = staff?.name,
+                staffPhone = staff?.phone,
+                passengerName = passengerName,
+            )
+        }
+    }
+
+    private fun Activities.toMealRows(): List<ExcelMealItem> =
+        mealList.map { meal ->
+            ExcelMealItem(
+                time = meal.time,
+                mealTime = meal.name,
+                location = meal.position,
+                remark = meal.description,
+            )
+        }
+
+    private fun Activities.toLodgingRows(): List<LodgingItem> =
+        hostedList.mapNotNull { it.toLodgingRow() }
+
+    private fun HostedItem.toLodgingRow(): LodgingItem? {
+        val guest = person ?: return null
+        return LodgingItem(
+            name = guest.name,
+            unit = guest.unit,
+            roomNumber = roomNumber?.let { "房号$it" },
+            position = hostedColorsTag?.name,
+        )
+    }
+
+    private fun Activities.toLodgingStaffRows(): List<LodgingStaffExcelRow> =
+        promptServiceList.firstOrNull()?.toLodgingStaffRows() ?: emptyList()
+
+    private fun PromptService.toLodgingStaffRows(): List<LodgingStaffExcelRow> =
+        staffList.flatMap { group ->
+            val members = group.groupList.ifEmpty { mutableListOf(null) }
+            members.mapIndexed { index, member ->
+                LodgingStaffExcelRow(
+                    unit = if (index == 0) group.name else null,
+                    contact = member?.let {
+                        listOfNotNull(it.name, it.phone).joinToString("")
+                    },
+                    roomNumber = member?.duty?.removePrefix("房号"),
+                )
+            }
+        }
+
+    private fun Activities.toScheduleRows(): List<ScheduleExcelRow> =
+        schedules.flatMap { schedule -> schedule.toScheduleRows() }
+
+    private fun Schedule.toScheduleRows(): List<ScheduleExcelRow> =
+        inspectionTeamItem.flatMap { team -> team.toScheduleRows() }
+
+    private fun InspectionTeamItem.toScheduleRows(): List<ScheduleExcelRow> {
+        val date = eventArrangements.firstOrNull()?.startTime?.format(DateFormatter)
+        val route = routeNode.joinToString(" → ").takeIf { it.isNotBlank() }
+        val events = eventArrangements.ifEmpty { mutableListOf(null) }
+
+        return events.mapIndexed { index, event ->
+            ScheduleExcelRow(
+                date = if (index == 0) date else null,
+                inspectionTeam = if (index == 0) name else null,
+                line = if (index == 0) route else null,
+                time = event?.startTime?.format(TimeFormatter),
+                context = event?.content,
+                location = event?.location,
+            )
+        }
+    }
+
+    private fun Activities.toInspectionPointRows(): List<InspectionPointsItem> =
+        inspectionPoints.mapIndexed { index, point ->
+            val parts = point.description?.split("\n", limit = 2) ?: emptyList()
+            InspectionPointsItem(
+                name = parts.getOrNull(0) ?: "考察点${index + 1}",
+                description = parts.getOrNull(1) ?: point.description,
+            )
+        }
+
+    private fun Activities.toAttendanceGuidelineRows(): List<AttendanceGuidelinesItem> =
+        promptServiceList
+            .mapNotNull { it.attendanceInstructionsContent?.trimToNull() }
+            .map { AttendanceGuidelinesItem(description = it) }
+
+    private fun Activities.toOverviewRows(): List<OverviewOfTheCityAndCountyExcelRow> =
+        overviewOfTheCityAndCounty.flatMap { overview ->
+            listOf(
+                OverviewOfTheCityAndCountyExcelRow(value = overview.title),
+                OverviewOfTheCityAndCountyExcelRow(
+                    value = overview.description.joinToString("\n") { paragraph ->
+                        listOfNotNull(paragraph.title, paragraph.content).joinToString("\n")
+                    }.trimToNull()
+                ),
+            )
+        }
+
+    private fun String.trimToNull(): String? = trim().takeIf { it.isNotEmpty() }
+
+    private companion object {
+        val DateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("M月d日")
+        val TimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    }
+}
