@@ -89,7 +89,7 @@ class ExcelDatabaseExportService(
             val staff = passengersOnBoardList.getOrNull(index)
             CarExcelRow(
                 carNumber = if (index == 0) carNumber else null,
-                plateNumber = null,
+                carPlate = if (index == 0) carPlate else null,
                 driver = if (index == 0) driver else null,
                 driverNumber = if (index == 0) driverNumber else null,
                 staffName = staff?.name,

@@ -1,10 +1,11 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
-import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 
 /**
@@ -31,6 +32,11 @@ data class Car(
     /** 车号。 */
     @Column(name = "car_number")
     var carNumber: Long? = null,
+
+    /** 车牌号。 */
+    @JsonAlias("plate", "plateNumber")
+    @Column(name = "car_plate")
+    var carPlate: String? = null,
 
     /** 驾驶员姓名。 */
     @Column(name = "driver")

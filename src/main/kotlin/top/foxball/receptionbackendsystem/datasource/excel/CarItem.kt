@@ -5,7 +5,7 @@ import com.alibaba.excel.annotation.ExcelProperty
 data class CarItem(
     var carNumber: Long? = null,
 
-    var plateNumber: String? = null,
+    var carPlate: String? = null,
 
     var driver: String? = null,
 
@@ -27,7 +27,7 @@ data class CarExcelRow(
     var carNumber: Long? = null,
 
     @field:ExcelProperty(value = ["车牌号"], index = 1)
-    var plateNumber: String? = null,
+    var carPlate: String? = null,
 
     @field:ExcelProperty(value = ["司机"], index = 2)
     var driver: String? = null,

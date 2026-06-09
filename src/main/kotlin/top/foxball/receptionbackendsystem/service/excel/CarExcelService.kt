@@ -45,7 +45,7 @@ class CarExcelService {
             if (carNumber != null) {
                 currentCar = CarItem(
                     carNumber = carNumber,
-                    plateNumber = row.plateNumber?.trimToNull(),
+                    carPlate = row.carPlate?.trimToNull(),
                     driver = row.driver?.trimToNull(),
                     driverNumber = row.driverNumber?.trimToNull(),
                 )
@@ -73,7 +73,7 @@ class CarExcelService {
 
     private fun CarExcelRow.isBlankRow(): Boolean =
         carNumber == null &&
-            plateNumber.isNullOrBlank() &&
+            carPlate.isNullOrBlank() &&
             driver.isNullOrBlank() &&
             driverNumber.isNullOrBlank() &&
             staffName.isNullOrBlank() &&

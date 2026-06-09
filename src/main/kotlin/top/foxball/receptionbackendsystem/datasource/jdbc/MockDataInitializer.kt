@@ -340,6 +340,7 @@ class MockDataInitializer(
         car(
             activity = activity,
             carNumber = 1,
+            carPlate = "浙A8K216",
             driver = "赵师傅",
             driverNumber = "13800010001",
             onBoardNames = listOf("陈佳", "刘海"),
@@ -348,6 +349,7 @@ class MockDataInitializer(
         car(
             activity = activity,
             carNumber = 2,
+            carPlate = "浙B3M579",
             driver = "钱师傅",
             driverNumber = "13800010002",
             onBoardNames = listOf("周宁", "吴越"),
@@ -356,6 +358,7 @@ class MockDataInitializer(
         car(
             activity = activity,
             carNumber = 3,
+            carPlate = "浙C6Q832",
             driver = "孙师傅",
             driverNumber = "13800010003",
             onBoardNames = listOf("郑桐", "何林"),
@@ -450,6 +453,7 @@ class MockDataInitializer(
     private fun car(
         activity: Activities,
         carNumber: Long,
+        carPlate: String,
         driver: String,
         driverNumber: String,
         onBoardNames: List<String>,
@@ -457,6 +461,7 @@ class MockDataInitializer(
     ) = Car(
         activity = activity,
         carNumber = carNumber,
+        carPlate = carPlate,
         driver = driver,
         driverNumber = driverNumber,
         passengersOnBoardList = onBoardNames.map(::passengerOnBoard).toMutableList(),

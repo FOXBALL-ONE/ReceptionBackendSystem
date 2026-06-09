@@ -174,6 +174,7 @@ class ExcelDatabaseImportService(
         Car(
             activity = activity,
             carNumber = carNumber,
+            carPlate = carPlate?.trimToNull(),
             driver = driver?.trimToNull(),
             driverNumber = driverNumber?.trimToNull(),
             passengersOnBoardList = staff.map {

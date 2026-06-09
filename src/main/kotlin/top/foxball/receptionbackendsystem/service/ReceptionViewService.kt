@@ -123,7 +123,7 @@ class ReceptionViewService(
 
     /**
      * 获取车辆安排信息。
-     * 返回格式：[{ id, plate, driver: {name, phone}, passengers: [], leaders: [{name, phone}] }]
+     * 返回格式：[{ id, carPlate, plate, driver: {name, phone}, passengers: [], leaders: [{name, phone}] }]
      */
     fun getVehicles(): List<Map<String, Any?>> {
         val activity = currentActivity()
@@ -132,7 +132,8 @@ class ReceptionViewService(
         return cars.map { car ->
             mapOf(
                 "id" to car.carNumber,
-                "plate" to "",
+                "carPlate" to car.carPlate,
+                "plate" to car.carPlate,
                 "driver" to mapOf(
                     "name" to car.driver,
                     "phone" to car.driverNumber
