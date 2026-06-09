@@ -37,4 +37,7 @@ data class Person(
     /** 昵称或展示名。 */
     @Column(name = "nick_name")
     var nickName: String? = null,
+
+    @Column(name = "inspection_team_item_id")
+    var inspectionTeamItemId: Long? = null,
 )
