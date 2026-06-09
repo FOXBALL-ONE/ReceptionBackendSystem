@@ -79,6 +79,22 @@ data class Activities(
     @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
     var carList: MutableList<Car> = mutableListOf(),
 
+    /** 活动人员列表，删除活动时级联删除对应人员。 */
+    @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var personList: MutableList<Person> = mutableListOf(),
+
+    /** 活动图片列表，删除活动时级联删除对应图片元数据。 */
+    @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var imageList: MutableList<Image> = mutableListOf(),
+
+    /** 活动提示服务配置列表，删除活动时级联删除对应配置。 */
+    @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var promptServiceList: MutableList<PromptService> = mutableListOf(),
+
+    /** 活动考察组安排列表，删除活动时级联删除对应考察组。 */
+    @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var inspectionTeamItemList: MutableList<InspectionTeamItem> = mutableListOf(),
+
     /** 用餐安排，使用 jsonb 保存前端展示所需的结构化数据。 */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "meal_list", columnDefinition = "jsonb")

@@ -32,14 +32,39 @@ class MockDataInitializer(
     @Transactional
     override fun run(args: ApplicationArguments) {
         seedColorTags()
-        seedPromptService()
-        val mockImages = seedMockImages()
 
         if (activitiesRepository.existsByUrl(MOCK_ACTIVITY_URL)) {
             return
         }
 
-        val savedActivity = activitiesRepository.save(createActivity(mockImages))
+        val activity = Activities(
+            url = MOCK_ACTIVITY_URL,
+            masterTitle = "2026 夏季重点项目接待活动",
+            subtitle = "城市更新与产业协同发展专题考察",
+            name = "夏季重点项目接待",
+            startTime = at(0, 9, 0),
+            endTime = at(2, 18, 0),
+            bannerTags = "重点项目,城市更新,产业协同,现场考察",
+            isAnimation = true,
+            isTopNavigationBar = true,
+            icp = "浙ICP备2026000001号-1",
+            technicalSupport = "Foxball 技术支持",
+            isOpen = true,
+        )
+        val savedActivity = activitiesRepository.save(activity)
+        val mockImages = seedMockImages(savedActivity)
+        seedPromptService(savedActivity)
+
+        savedActivity.bannerUrl = mockImagePath(mockImages, "0.png")
+        savedActivity.mealList = createMeals()
+        savedActivity.hostedList = createHostedList()
+        savedActivity.inspectionPoints = createInspectionPoints(mockImages)
+        savedActivity.overviewOfTheCityAndCounty = createCityOverview(mockImages)
+        savedActivity.schedules.addAll(createSchedules(savedActivity, mockImages))
+        savedActivity.carList.addAll(createCars(savedActivity))
+        bindActivityChildren(savedActivity)
+
+        activitiesRepository.save(savedActivity)
         personRepository.saveAll(createPeople(savedActivity))
     }
 
@@ -52,13 +77,14 @@ class MockDataInitializer(
     }
 
     /** 初始化提示服务配置，已有配置时不重复生成。 */
-    private fun seedPromptService() {
+    private fun seedPromptService(activity: Activities) {
         if (promptServiceRepository.count() > 0) {
             return
         }
 
         promptServiceRepository.save(
             PromptService(
+                activity = activity,
                 staffList = mutableListOf(
                     StaffItem(
                         name = "现场统筹",
@@ -178,6 +204,19 @@ class MockDataInitializer(
         activity.carList.addAll(createCars(activity))
 
         return activity
+    }
+
+    /** 维护活动子实体的反向引用。 */
+    private fun bindActivityChildren(activity: Activities) {
+        activity.schedules.forEach { schedule ->
+            schedule.activity = activity
+            schedule.inspectionTeamItem.forEach { it.activity = activity }
+        }
+        activity.carList.forEach { it.activity = activity }
+        activity.personList.forEach { it.activity = activity }
+        activity.imageList.forEach { it.activity = activity }
+        activity.promptServiceList.forEach { it.activity = activity }
+        activity.inspectionTeamItemList.forEach { it.activity = activity }
     }
 
     private fun createMeals(): MutableList<MealItem> = mutableListOf(
@@ -437,7 +476,7 @@ class MockDataInitializer(
         ?: error("模拟人员不存在：$name")
 
     /** 将项目 image 目录中的图片导入到配置的图片存储目录，并写入图片元数据表。 */
-    private fun seedMockImages(): Map<String, String> {
+    private fun seedMockImages(activity: Activities): Map<String, String> {
         val sourceDir = mockImageSourceDir() ?: return emptyMap()
         val importedImages = linkedMapOf<String, String>()
 
@@ -447,7 +486,7 @@ class MockDataInitializer(
                 .sortedBy { it.fileName.toString() }
                 .forEach { sourcePath ->
                     val fileName = sourcePath.fileName.toString()
-                    importedImages[fileName] = importMockImage(sourcePath)
+                    importedImages[fileName] = importMockImage(sourcePath, activity)
                 }
         }
 
@@ -455,7 +494,7 @@ class MockDataInitializer(
     }
 
     /** 将单张模拟图片复制到 Image.storage/mock 下，并创建或更新对应元数据。 */
-    private fun importMockImage(sourcePath: Path): String {
+    private fun importMockImage(sourcePath: Path, activity: Activities): String {
         val fileName = sourcePath.fileName.toString()
         val relativePath = imageProperties.normalizeRelativePath("mock/$fileName")
         val targetPath = imageProperties.resolveStoragePath(relativePath)
@@ -465,6 +504,7 @@ class MockDataInitializer(
 
         val imageSize = runCatching { ImageIO.read(targetPath.toFile()) }.getOrNull()
         val image = imageRepository.findByObjectKeyAndIsDeletedFalse(relativePath) ?: Image(
+            activity = activity,
             originalFilename = fileName,
             storedFilename = fileName,
             objectKey = relativePath,
@@ -473,6 +513,7 @@ class MockDataInitializer(
             usageType = MOCK_IMAGE_USAGE_TYPE,
         )
 
+        image.activity = activity
         image.originalFilename = fileName
         image.storedFilename = fileName
         image.extension = sourcePath.extension()

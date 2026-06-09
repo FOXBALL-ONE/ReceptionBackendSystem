@@ -1,6 +1,9 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import java.time.LocalDateTime
 
 /**
@@ -16,6 +19,12 @@ data class InspectionTeamItem(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Long? = null,
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    var activity: Activities? = null,
 
     /** 考察组名称。 */
     @Column(name = "name")

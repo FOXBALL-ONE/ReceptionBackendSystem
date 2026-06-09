@@ -1,7 +1,10 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.type.SqlTypes
 import java.time.LocalDateTime
 
@@ -17,6 +20,12 @@ data class PromptService (
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Int? = null,
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "activity_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    var activity: Activities? = null,
 
     /** 工作人员分组列表。 */
     @JdbcTypeCode(SqlTypes.JSON)

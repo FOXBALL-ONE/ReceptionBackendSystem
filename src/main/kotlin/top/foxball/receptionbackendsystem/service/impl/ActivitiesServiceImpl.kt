@@ -63,7 +63,14 @@ class ActivitiesServiceImpl(
 
     /** 维护 JPA 双向关系中的子级反向引用。 */
     private fun bindChildren(activity: Activities) {
-        activity.schedules.forEach { it.activity = activity }
+        activity.schedules.forEach { schedule ->
+            schedule.activity = activity
+            schedule.inspectionTeamItem.forEach { it.activity = activity }
+        }
         activity.carList.forEach { it.activity = activity }
+        activity.personList.forEach { it.activity = activity }
+        activity.imageList.forEach { it.activity = activity }
+        activity.promptServiceList.forEach { it.activity = activity }
+        activity.inspectionTeamItemList.forEach { it.activity = activity }
     }
 }
