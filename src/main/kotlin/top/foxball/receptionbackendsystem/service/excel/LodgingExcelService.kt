@@ -26,5 +26,12 @@ class LodgingExcelService {
             .head(LodgingItem::class.java)
             .sheet(3)
             .doReadSync<LodgingItem>()
+            .filterNot { it.isBlankRow() }
     }
+
+    private fun LodgingItem.isBlankRow(): Boolean =
+        name.isNullOrBlank() &&
+            unit.isNullOrBlank() &&
+            roomNumber.isNullOrBlank() &&
+            position.isNullOrBlank()
 }

@@ -1,11 +1,13 @@
 package top.foxball.receptionbackendsystem.datasource.excel
 
 import com.alibaba.excel.annotation.ExcelProperty
+import com.alibaba.excel.annotation.format.DateTimeFormat
 import java.time.LocalDateTime
 
 data class MealItem(
 
     @field:ExcelProperty(value = ["时间"], index = 0)
+    @field:DateTimeFormat("yyyy-MM-dd HH:mm")
     var time: LocalDateTime? = null,
 
     @field:ExcelProperty(value = ["餐次"], index = 1)
