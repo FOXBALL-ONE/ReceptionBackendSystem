@@ -94,6 +94,14 @@ data class UsageTypeRequest(
 )
 
 /**
+ * 图片上传元信息请求体。
+ */
+data class UploadImageMetadataRequest(
+    val usageType: String? = null,
+    val uploadedBy: String? = null,
+)
+
+/**
  * 活动更新请求体。
  */
 data class UpdateActivityRequest(

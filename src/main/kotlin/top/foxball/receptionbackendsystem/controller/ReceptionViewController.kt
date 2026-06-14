@@ -2,8 +2,10 @@ package top.foxball.receptionbackendsystem.controller
 
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import top.foxball.receptionbackendsystem.service.ReceptionViewService
 
 /**
@@ -15,6 +17,26 @@ import top.foxball.receptionbackendsystem.service.ReceptionViewService
 class ReceptionViewController(
     private val receptionViewService: ReceptionViewService
 ) {
+
+    @GetMapping("/site/{activityUrl}/{section}")
+    fun getByActivityUrl(
+        @PathVariable activityUrl: String,
+        @PathVariable section: String,
+    ): ResponseEntity<Any> {
+        val data = when (section) {
+            "meta" -> receptionViewService.getMeta(activityUrl)
+            "schedule" -> receptionViewService.getSchedule(activityUrl)
+            "people" -> receptionViewService.getPeople(activityUrl)
+            "vehicles" -> receptionViewService.getVehicles(activityUrl)
+            "meals" -> receptionViewService.getMeals(activityUrl)
+            "hotel" -> receptionViewService.getHotel(activityUrl)
+            "sites" -> receptionViewService.getSites(activityUrl)
+            "service" -> receptionViewService.getService(activityUrl)
+            "overview" -> receptionViewService.getOverview(activityUrl)
+            else -> throw ResourceNotFoundException("展示数据接口不存在：$section")
+        }
+        return ResponseEntity.ok(data)
+    }
 
     /**
      * 获取元数据配置（活动标题、logo、横幅图等）。

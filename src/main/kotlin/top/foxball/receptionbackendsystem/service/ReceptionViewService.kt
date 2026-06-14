@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import top.foxball.receptionbackendsystem.config.ImageProperties
 import top.foxball.receptionbackendsystem.datasource.jdbc.*
+import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -25,9 +26,9 @@ class ReceptionViewService(
      * 获取元数据配置。
      * 返回格式与 index.html 的 meta 初始化逻辑保持一致。
      */
-    fun getMeta(): Map<String, Any?> {
-        val activity = currentActivity()
-        val promptService = promptServiceRepository.findAll().firstOrNull()
+    fun getMeta(activityUrl: String? = null): Map<String, Any?> {
+        val activity = activityFor(activityUrl)
+        val promptService = promptServiceFor(activity)
 
         return mapOf(
             "access" to (activity?.isOpen != false),
@@ -55,8 +56,8 @@ class ReceptionViewService(
      * 获取日程安排数据。
      * 返回格式：{ days: [{ date, groups: [{name, mapImage, route, meetings}] }] }
      */
-    fun getSchedule(): Map<String, Any?> {
-        val activity = currentActivity()
+    fun getSchedule(activityUrl: String? = null): Map<String, Any?> {
+        val activity = activityFor(activityUrl)
 
         if (activity == null || activity.schedules.isEmpty()) {
             return mapOf("days" to emptyList<Map<String, Any?>>())
@@ -105,8 +106,8 @@ class ReceptionViewService(
      * 获取人员信息列表。
      * 返回格式：[{ name, unit, type, typeColor, group, avatar }]
      */
-    fun getPeople(): List<Map<String, Any?>> {
-        val activity = currentActivity()
+    fun getPeople(activityUrl: String? = null): List<Map<String, Any?>> {
+        val activity = activityFor(activityUrl)
         val persons = activity?.id?.let(personRepository::findByActivityId) ?: emptyList()
 
         return persons.map { person ->
@@ -125,8 +126,8 @@ class ReceptionViewService(
      * 获取车辆安排信息。
      * 返回格式：[{ id, carPlate, plate, driver: {name, phone}, passengers: [], leaders: [{name, phone}] }]
      */
-    fun getVehicles(): List<Map<String, Any?>> {
-        val activity = currentActivity()
+    fun getVehicles(activityUrl: String? = null): List<Map<String, Any?>> {
+        val activity = activityFor(activityUrl)
         val cars = activity?.id?.let(carRepository::findByActivityId) ?: emptyList()
 
         return cars.map { car ->
@@ -153,8 +154,8 @@ class ReceptionViewService(
      * 获取用餐安排信息。
      * 返回格式：[{ time, label, remark }]
      */
-    fun getMeals(): List<Map<String, Any?>> {
-        val activity = currentActivity()
+    fun getMeals(activityUrl: String? = null): List<Map<String, Any?>> {
+        val activity = activityFor(activityUrl)
 
         return activity?.mealList?.map { meal ->
             mapOf(
@@ -172,8 +173,8 @@ class ReceptionViewService(
      * 获取住宿信息。
      * 返回格式：[{ name, unit, type, typeColor, room }]
      */
-    fun getHotel(): List<Map<String, Any?>> {
-        val activity = currentActivity()
+    fun getHotel(activityUrl: String? = null): List<Map<String, Any?>> {
+        val activity = activityFor(activityUrl)
 
         return activity?.hostedList?.mapNotNull { hosted ->
             hosted.person?.let { person ->
@@ -192,8 +193,8 @@ class ReceptionViewService(
      * 获取考察点信息。
      * 返回格式：[{ name, intro, images: [] }]
      */
-    fun getSites(): List<Map<String, Any?>> {
-        val activity = currentActivity()
+    fun getSites(activityUrl: String? = null): List<Map<String, Any?>> {
+        val activity = activityFor(activityUrl)
 
         return activity?.inspectionPoints?.mapIndexed { index, point ->
             mapOf(
@@ -208,8 +209,9 @@ class ReceptionViewService(
      * 获取服务信息。
      * 返回格式：{ staff: [{type, members: [{name, phone}]}], weather: [], notices: [] }
      */
-    fun getService(): Map<String, Any?> {
-        val promptService = promptServiceRepository.findAll().firstOrNull()
+    fun getService(activityUrl: String? = null): Map<String, Any?> {
+        val activity = activityFor(activityUrl)
+        val promptService = promptServiceFor(activity)
         val dateFormatter = DateTimeFormatter.ofPattern("MM月dd日")
 
         return mapOf(
@@ -246,8 +248,8 @@ class ReceptionViewService(
      * 获取概况介绍。
      * 返回格式：{ image, sections: [{title, content}] }
      */
-    fun getOverview(): Map<String, Any?> {
-        val activity = currentActivity()
+    fun getOverview(activityUrl: String? = null): Map<String, Any?> {
+        val activity = activityFor(activityUrl)
 
         val sections = activity?.overviewOfTheCityAndCounty?.map { overview ->
             mapOf(
@@ -269,6 +271,19 @@ class ReceptionViewService(
 
     /** 将展示接口中的图片字段转换为 index.html 可直接加载的 URL。 */
     private fun imageUrl(rawPath: String?): String? = imageProperties.publicUrl(rawPath)
+
+    private fun activityFor(activityUrl: String?): Activities? {
+        val normalizedUrl = activityUrl?.trim()?.trim('/')?.takeIf { it.isNotBlank() }
+        return if (normalizedUrl != null) {
+            activitiesRepository.findByUrl(normalizedUrl)
+                ?: throw ResourceNotFoundException("活动不存在：$normalizedUrl")
+        } else {
+            currentActivity()
+        }
+    }
+
+    private fun promptServiceFor(activity: Activities?): PromptService? =
+        activity?.promptServiceList?.firstOrNull() ?: promptServiceRepository.findAll().firstOrNull()
 
     private fun currentActivity(): Activities? {
         return activitiesRepository.findByIsOpenTrueOrderByStartTimeAsc().firstOrNull()

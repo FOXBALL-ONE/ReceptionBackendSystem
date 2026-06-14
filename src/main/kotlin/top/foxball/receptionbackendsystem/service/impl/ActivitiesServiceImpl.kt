@@ -41,15 +41,13 @@ class ActivitiesServiceImpl(
         return activitiesRepository.save(activity)
     }
 
-    /** 更新活动，并重新绑定子级日程、车辆关系。 */
+    /** 更新活动基础信息，并保留已有的子级关联数据。 */
     override fun update(id: Int, activity: Activities): Activities {
-        if (!activitiesRepository.existsById(id)) {
-            throw ResourceNotFoundException("活动不存在：$id")
-        }
+        val existing = activitiesRepository.findById(id)
+            .orElseThrow { ResourceNotFoundException("活动不存在：$id") }
 
-        activity.id = id
-        bindChildren(activity)
-        return activitiesRepository.save(activity)
+        copyEditableFields(source = activity, target = existing)
+        return activitiesRepository.save(existing)
     }
 
     /** 删除活动配置。 */
@@ -72,5 +70,28 @@ class ActivitiesServiceImpl(
         activity.imageList.forEach { it.activity = activity }
         activity.promptServiceList.forEach { it.activity = activity }
         activity.inspectionTeamItemList.forEach { it.activity = activity }
+    }
+
+    private fun copyEditableFields(source: Activities, target: Activities) {
+        target.url = source.url
+        target.masterTitle = source.masterTitle
+        target.subtitle = source.subtitle
+        target.name = source.name
+        target.startTime = source.startTime
+        target.endTime = source.endTime
+        target.bannerTags = source.bannerTags
+        target.bannerUrl = source.bannerUrl
+        target.isAnimation = source.isAnimation
+        target.isTopNavigationBar = source.isTopNavigationBar
+        target.icp = source.icp
+        target.technicalSupport = source.technicalSupport
+        target.isOpen = source.isOpen
+
+        if (source.mealList.isNotEmpty()) target.mealList = source.mealList
+        if (source.hostedList.isNotEmpty()) target.hostedList = source.hostedList
+        if (source.inspectionPoints.isNotEmpty()) target.inspectionPoints = source.inspectionPoints
+        if (source.overviewOfTheCityAndCounty.isNotEmpty()) {
+            target.overviewOfTheCityAndCounty = source.overviewOfTheCityAndCounty
+        }
     }
 }

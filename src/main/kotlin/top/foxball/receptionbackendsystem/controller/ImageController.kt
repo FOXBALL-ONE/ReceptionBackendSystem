@@ -1,22 +1,32 @@
 package top.foxball.receptionbackendsystem.controller
 
+import org.springframework.core.io.FileSystemResource
+import org.springframework.core.io.Resource
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RequestPart
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
+import top.foxball.receptionbackendsystem.config.ImageProperties
 import top.foxball.receptionbackendsystem.controller.request.EmptyRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.ObjectKeyRequest
 import top.foxball.receptionbackendsystem.controller.request.Sha256Request
 import top.foxball.receptionbackendsystem.controller.request.UpdateImageRequest
+import top.foxball.receptionbackendsystem.controller.request.UploadImageMetadataRequest
 import top.foxball.receptionbackendsystem.controller.request.UsageTypeRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.Image
+import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import top.foxball.receptionbackendsystem.service.ImageService
 import top.foxball.receptionbackendsystem.shared.Response
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
 /**
  * 图片文件元数据接口。
@@ -25,6 +35,7 @@ import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 @RequestMapping("/api/images")
 class ImageController(
     private val imageService: ImageService,
+    private val imageProperties: ImageProperties,
     private val responseBuilder: ResponseBuilder,
 ) {
 
@@ -66,11 +77,39 @@ class ImageController(
     /** 上传图片文件，并保存相对路径元数据。 */
     @PostMapping("/upload")
     fun upload(
-        @RequestParam("file") file: MultipartFile,
-        @RequestParam(required = false) usageType: String?,
-        @RequestParam(required = false) uploadedBy: String?,
+        @RequestPart("file") file: MultipartFile,
+        @RequestPart("metadata", required = false) metadata: UploadImageMetadataRequest?,
+        @RequestPart("usageType", required = false) usageType: String?,
+        @RequestPart("uploadedBy", required = false) uploadedBy: String?,
     ): ResponseEntity<Response> =
-        ok(imageService.upload(file, usageType, uploadedBy), "图片上传成功")
+        ok(
+            imageService.upload(
+                file = file,
+                usageType = metadata?.usageType ?: usageType,
+                uploadedBy = metadata?.uploadedBy ?: uploadedBy,
+            ),
+            "图片上传成功",
+        )
+
+    @PostMapping("/download")
+    fun download(@RequestBody request: LongIdRequest): ResponseEntity<Resource> {
+        val image = imageService.findById(request.id)
+        val path = imageProperties.resolveStoragePath(image.storagePath)
+        if (!Files.isRegularFile(path)) {
+            throw ResourceNotFoundException("图片文件不存在：${image.storagePath}")
+        }
+
+        val filename = image.originalFilename.ifBlank { image.storedFilename }
+        val encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20")
+        val mediaType = runCatching { MediaType.parseMediaType(image.contentType) }
+            .getOrDefault(MediaType.APPLICATION_OCTET_STREAM)
+
+        return ResponseEntity.ok()
+            .contentType(mediaType)
+            .contentLength(Files.size(path))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''$encodedFilename")
+            .body(FileSystemResource(path))
+    }
 
     /** 软删除图片元数据。 */
     @PostMapping("/delete")
