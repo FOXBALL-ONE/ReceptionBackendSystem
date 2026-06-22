@@ -1,11 +1,9 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
-import org.springframework.data.jpa.repository.JpaRepository
-
 /**
  * 活动人员数据仓库。
  */
-interface PersonRepository : JpaRepository<Person, Int> {
+interface PersonRepository : ReceptionRepository<Person, Int> {
     /**
      * 查询指定活动下的全部人员。
      */

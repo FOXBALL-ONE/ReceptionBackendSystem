@@ -1,11 +1,9 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
-import org.springframework.data.jpa.repository.JpaRepository
-
 /**
  * 活动车辆数据仓库。
  */
-interface CarRepository : JpaRepository<Car, Int> {
+interface CarRepository : ReceptionRepository<Car, Int> {
     /**
      * 查询指定活动下的全部车辆。
      */

@@ -9,19 +9,19 @@ import java.time.LocalDateTime
 /**
  * 图片文件元数据实体。
  *
- * 只保存图片文件的描述信息和存储定位信息，不保存图片二进制内容。
+ * 只保存图片文件的描述、存储定位和访问地址，不保存图片二进制内容。
  */
 @Table(
     name = "images",
     indexes = [
+        Index(name = "idx_images_activity_id", columnList = "activity_id"),
         Index(name = "idx_images_sha256", columnList = "sha256"),
         Index(name = "idx_images_object_key", columnList = "object_key"),
         Index(name = "idx_images_created_at", columnList = "created_at"),
-    ]
+    ],
 )
 @Entity
 data class Image(
-    /** 图片元数据主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -45,7 +45,7 @@ data class Image(
     @Column(name = "extension", length = 32)
     var extension: String? = null,
 
-    /** 文件 MIME 类型，例如 image/jpeg。 */
+    /** 文件 MIME 类型。 */
     @Column(name = "content_type", nullable = false, length = 128)
     var contentType: String = "",
 
@@ -61,15 +61,15 @@ data class Image(
     @Column(name = "height")
     var height: Int? = null,
 
-    /** 文件 SHA-256 摘要，用于校验和去重判断。 */
+    /** 文件 SHA-256 摘要。 */
     @Column(name = "sha256", length = 64)
     var sha256: String? = null,
 
-    /** 存储服务名称或存储桶名称。 */
+    /** 存储桶或存储服务名称。 */
     @Column(name = "bucket", length = 128)
     var bucket: String? = null,
 
-    /** 对象存储中的对象键，或本地存储的相对路径。 */
+    /** 对象存储 key，或本地存储相对路径。 */
     @Column(name = "object_key", nullable = false, length = 512)
     var objectKey: String = "",
 

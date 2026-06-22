@@ -17,8 +17,8 @@ import top.foxball.receptionbackendsystem.datasource.excel.ScheduleExcelRow
 import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
 import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
 import top.foxball.receptionbackendsystem.datasource.jdbc.Car
-import top.foxball.receptionbackendsystem.datasource.jdbc.HostedItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
 import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
@@ -112,13 +112,13 @@ class ExcelDatabaseExportService(
     private fun Activities.toLodgingRows(): List<LodgingItem> =
         hostedList.mapNotNull { it.toLodgingRow() }
 
-    private fun HostedItem.toLodgingRow(): LodgingItem? {
+    private fun Lodging.toLodgingRow(): LodgingItem? {
         val guest = person ?: return null
         return LodgingItem(
             name = guest.name,
             unit = guest.unit,
             roomNumber = roomNumber?.let { "房号$it" },
-            position = hostedColorsTag?.name,
+            position = colorTag?.name,
         )
     }
 

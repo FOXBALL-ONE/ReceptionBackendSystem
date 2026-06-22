@@ -16,14 +16,14 @@ import top.foxball.receptionbackendsystem.datasource.excel.TimeAndContextItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
 import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
 import top.foxball.receptionbackendsystem.datasource.jdbc.Car
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.HostedColorsTag
-import top.foxball.receptionbackendsystem.datasource.jdbc.HostedItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPointItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.MealItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
+import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
 import top.foxball.receptionbackendsystem.datasource.jdbc.OneStaff
-import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCountyItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
 import top.foxball.receptionbackendsystem.datasource.jdbc.ParagraphContentItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.PassengersOnBoardItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
@@ -120,13 +120,15 @@ class ExcelDatabaseImportService(
         val peopleByName = parsed.personnel
             .mapNotNull { row -> row.name?.trimToNull()?.let { it to row } }
             .toMap()
+        val colorTagsByName = mutableMapOf<String, ColorTag>()
 
         activity.personList = parsed.personnel.mapNotNull { it.toPerson(activity) }.toMutableList()
         activity.carList = parsed.cars.map { it.toCar(activity, peopleByName) }.toMutableList()
-        activity.mealList = parsed.meals.map { it.toMealItem() }.toMutableList()
-        activity.hostedList = parsed.lodgings.mapNotNull { it.toHostedItem(peopleByName) }.toMutableList()
-        activity.inspectionPoints = parsed.inspectionPoints.map { it.toInspectionPointItem() }.toMutableList()
-        activity.overviewOfTheCityAndCounty = parsed.overviews.map { it.toOverviewItem() }.toMutableList()
+        activity.mealList = parsed.meals.map { it.toMeal(activity) }.toMutableList()
+        activity.hostedList = parsed.lodgings.mapNotNull { it.toLodging(activity, peopleByName, colorTagsByName) }.toMutableList()
+        activity.colorTagList = colorTagsByName.values.toMutableList()
+        activity.inspectionPoints = parsed.inspectionPoints.map { it.toInspectionPoint(activity) }.toMutableList()
+        activity.overviewOfTheCityAndCounty = parsed.overviews.map { it.toOverview(activity) }.toMutableList()
         activity.schedules = parsed.schedules.toSchedules(activity, startTime?.year ?: Year.now().value).toMutableList()
         activity.promptServiceList = mutableListOf(parsed.toPromptService(activity))
 
@@ -151,6 +153,11 @@ class ExcelDatabaseImportService(
     private fun bindActivityChildren(activity: Activities) {
         activity.personList.forEach { it.activity = activity }
         activity.carList.forEach { it.activity = activity }
+        activity.mealList.forEach { it.activity = activity }
+        activity.hostedList.forEach { it.activity = activity }
+        activity.colorTagList.forEach { it.activity = activity }
+        activity.inspectionPoints.forEach { it.activity = activity }
+        activity.overviewOfTheCityAndCounty.forEach { it.activity = activity }
         activity.schedules.forEach { schedule ->
             schedule.activity = activity
             schedule.inspectionTeamItem.forEach { it.activity = activity }
@@ -194,31 +201,46 @@ class ExcelDatabaseImportService(
             unit = unit?.trimToNull(),
         )
 
-    private fun ExcelMealItem.toMealItem(): MealItem =
-        MealItem(
+    private fun ExcelMealItem.toMeal(activity: Activities): Meal =
+        Meal(
+            activity = activity,
             name = mealTime?.trimToNull(),
             description = remark?.trimToNull(),
             position = location?.trimToNull(),
             time = time,
         )
 
-    private fun LodgingItem.toHostedItem(peopleByName: Map<String, PersonnelItem>): HostedItem? {
+    private fun LodgingItem.toLodging(
+        activity: Activities,
+        peopleByName: Map<String, PersonnelItem>,
+        colorTagsByName: MutableMap<String, ColorTag>,
+    ): Lodging? {
         val personName = name?.trimToNull() ?: return null
         val person = peopleByName[personName]?.toPersonSnapshot() ?: Person(name = personName, unit = unit?.trimToNull())
-        return HostedItem(
+        return Lodging(
             roomNumber = roomNumber?.cleanRoomNumber(),
             person = person,
-            hostedColorsTag = position?.trimToNull()?.let { HostedColorsTag(name = it) },
+            colorTag = position?.trimToNull()?.let { colorTagsByName.getOrCreate(activity, it) },
         )
     }
 
-    private fun InspectionPointsItem.toInspectionPointItem(): InspectionPointItem =
-        InspectionPointItem(
+    private fun MutableMap<String, ColorTag>.getOrCreate(activity: Activities, name: String): ColorTag =
+        getOrPut(name) {
+            ColorTag(
+                activity = activity,
+                name = name,
+            )
+        }
+
+    private fun InspectionPointsItem.toInspectionPoint(activity: Activities): InspectionPoint =
+        InspectionPoint(
+            activity = activity,
             description = listOfNotNull(name?.trimToNull(), description?.trimToNull()).joinToString("\n"),
         )
 
-    private fun ExcelOverviewItem.toOverviewItem(): OverviewOfTheCityAndCountyItem =
-        OverviewOfTheCityAndCountyItem(
+    private fun ExcelOverviewItem.toOverview(activity: Activities): OverviewOfTheCityAndCounty =
+        OverviewOfTheCityAndCounty(
+            activity = activity,
             title = node?.trimToNull(),
             description = mutableListOf(
                 ParagraphContentItem(

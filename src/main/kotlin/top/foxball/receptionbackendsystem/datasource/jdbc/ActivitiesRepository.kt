@@ -1,11 +1,14 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
-import org.springframework.data.jpa.repository.JpaRepository
-
 /**
  * 活动配置数据仓库。
  */
-interface ActivitiesRepository : JpaRepository<Activities, Int> {
+interface ActivitiesRepository : ReceptionRepository<Activities, Int> {
+    /**
+     * 根据活动 ID 查询活动。
+     */
+    fun findByActivityId(activityId: Int): Activities? = findEntityById(activityId)
+
     /**
      * 根据活动访问地址查询活动。
      */
