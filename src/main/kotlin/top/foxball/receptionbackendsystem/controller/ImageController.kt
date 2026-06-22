@@ -14,34 +14,126 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
-import top.foxball.receptionbackendsystem.datasource.jdbc.Image
 import top.foxball.receptionbackendsystem.handlder.ParamErrorException
 import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import top.foxball.receptionbackendsystem.service.ImageService
-import top.foxball.receptionbackendsystem.shared.Response
+import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/api/images")
 class ImageController(
     private val imageService: ImageService,
-    responseBuilder: ResponseBuilder,
-) : ControllerSupport(responseBuilder) {
+    private val builder: ResponseBuilder,
+) : ControllerSupport(builder) {
     @PostMapping("/list")
-    fun list(@RequestBody(required = false) request: ActivityIdRequest?): ResponseEntity<Response> {
+    fun list(@RequestBody(required = false) request: ActivityIdRequest?): ResponseEntity<ApiResponse> {
         val images = request?.activityId
             ?.let { imageService.findByActivityIdAndIsDeletedFalse(it) }
             ?: imageService.findAllActive()
-        return ok(images.map(::toResponse))
+
+        data class Response(
+            val id: Long?,
+            val activityId: Long?,
+            val originalFilename: String,
+            val storedFilename: String,
+            val extension: String?,
+            val contentType: String,
+            val fileSize: Long,
+            val width: Int?,
+            val height: Int?,
+            val sha256: String?,
+            val bucket: String?,
+            val objectKey: String,
+            val storagePath: String,
+            val accessUrl: String,
+            val uploadedBy: String?,
+            val usageType: String?,
+            val isDeleted: Boolean,
+            val createdAt: LocalDateTime?,
+            val updatedAt: LocalDateTime?,
+        )
+
+        val rs = images.map { image ->
+            Response(
+                id = image.id,
+                activityId = image.activity?.id,
+                originalFilename = image.originalFilename,
+                storedFilename = image.storedFilename,
+                extension = image.extension,
+                contentType = image.contentType,
+                fileSize = image.fileSize,
+                width = image.width,
+                height = image.height,
+                sha256 = image.sha256,
+                bucket = image.bucket,
+                objectKey = image.objectKey,
+                storagePath = image.storagePath,
+                accessUrl = imageService.buildAccessUrl(image),
+                uploadedBy = image.uploadedBy,
+                usageType = image.usageType,
+                isDeleted = image.isDeleted,
+                createdAt = image.createdAt,
+                updatedAt = image.updatedAt,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/find-by-id")
-    fun findById(@RequestBody request: LongIdRequest): ResponseEntity<Response> {
+    fun findById(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
         val image = imageService.findActiveById(id) ?: return notFound("image not found")
-        return ok(toResponse(image))
+
+        data class Response(
+            val id: Long?,
+            val activityId: Long?,
+            val originalFilename: String,
+            val storedFilename: String,
+            val extension: String?,
+            val contentType: String,
+            val fileSize: Long,
+            val width: Int?,
+            val height: Int?,
+            val sha256: String?,
+            val bucket: String?,
+            val objectKey: String,
+            val storagePath: String,
+            val accessUrl: String,
+            val uploadedBy: String?,
+            val usageType: String?,
+            val isDeleted: Boolean,
+            val createdAt: LocalDateTime?,
+            val updatedAt: LocalDateTime?,
+        )
+
+        val rs = Response(
+            id = image.id,
+            activityId = image.activity?.id,
+            originalFilename = image.originalFilename,
+            storedFilename = image.storedFilename,
+            extension = image.extension,
+            contentType = image.contentType,
+            fileSize = image.fileSize,
+            width = image.width,
+            height = image.height,
+            sha256 = image.sha256,
+            bucket = image.bucket,
+            objectKey = image.objectKey,
+            storagePath = image.storagePath,
+            accessUrl = imageService.buildAccessUrl(image),
+            uploadedBy = image.uploadedBy,
+            usageType = image.usageType,
+            isDeleted = image.isDeleted,
+            createdAt = image.createdAt,
+            updatedAt = image.updatedAt,
+        )
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping(
@@ -52,7 +144,7 @@ class ImageController(
         @RequestParam("file") file: MultipartFile,
         @RequestParam("activityId", required = false) activityId: Long?,
         @RequestPart("metadata", required = false) metadata: ImageUploadMetadata?,
-    ): ResponseEntity<Response> {
+    ): ResponseEntity<ApiResponse> {
         val resolvedActivityId = activityId ?: metadata?.activityId
             ?: throw ParamErrorException("activityId is required")
         val image = imageService.uploadImage(
@@ -61,7 +153,52 @@ class ImageController(
             usageType = metadata?.usageType,
             uploadedBy = metadata?.uploadedBy,
         )
-        return ok(toResponse(image))
+
+        data class Response(
+            val id: Long?,
+            val activityId: Long?,
+            val originalFilename: String,
+            val storedFilename: String,
+            val extension: String?,
+            val contentType: String,
+            val fileSize: Long,
+            val width: Int?,
+            val height: Int?,
+            val sha256: String?,
+            val bucket: String?,
+            val objectKey: String,
+            val storagePath: String,
+            val accessUrl: String,
+            val uploadedBy: String?,
+            val usageType: String?,
+            val isDeleted: Boolean,
+            val createdAt: LocalDateTime?,
+            val updatedAt: LocalDateTime?,
+        )
+
+        val rs = Response(
+            id = image.id,
+            activityId = image.activity?.id,
+            originalFilename = image.originalFilename,
+            storedFilename = image.storedFilename,
+            extension = image.extension,
+            contentType = image.contentType,
+            fileSize = image.fileSize,
+            width = image.width,
+            height = image.height,
+            sha256 = image.sha256,
+            bucket = image.bucket,
+            objectKey = image.objectKey,
+            storagePath = image.storagePath,
+            accessUrl = imageService.buildAccessUrl(image),
+            uploadedBy = image.uploadedBy,
+            usageType = image.usageType,
+            isDeleted = image.isDeleted,
+            createdAt = image.createdAt,
+            updatedAt = image.updatedAt,
+        )
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/download")
@@ -86,62 +223,17 @@ class ImageController(
     }
 
     @PostMapping("/delete")
-    fun delete(@RequestBody request: LongIdRequest): ResponseEntity<Response> {
+    fun delete(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
         if (!imageService.softDeleteById(id)) {
             return notFound("image not found")
         }
         return ok(true)
     }
-
-    private fun toResponse(image: Image): ImageResponse =
-        ImageResponse(
-            id = image.id,
-            activityId = image.activity?.id,
-            originalFilename = image.originalFilename,
-            storedFilename = image.storedFilename,
-            extension = image.extension,
-            contentType = image.contentType,
-            fileSize = image.fileSize,
-            width = image.width,
-            height = image.height,
-            sha256 = image.sha256,
-            bucket = image.bucket,
-            objectKey = image.objectKey,
-            storagePath = image.storagePath,
-            accessUrl = imageService.buildAccessUrl(image),
-            uploadedBy = image.uploadedBy,
-            usageType = image.usageType,
-            isDeleted = image.isDeleted,
-            createdAt = image.createdAt,
-            updatedAt = image.updatedAt,
-        )
 }
 
 data class ImageUploadMetadata(
     val activityId: Long? = null,
     val usageType: String? = null,
     val uploadedBy: String? = null,
-)
-
-data class ImageResponse(
-    val id: Long?,
-    val activityId: Long?,
-    val originalFilename: String,
-    val storedFilename: String,
-    val extension: String?,
-    val contentType: String,
-    val fileSize: Long,
-    val width: Int?,
-    val height: Int?,
-    val sha256: String?,
-    val bucket: String?,
-    val objectKey: String,
-    val storagePath: String,
-    val accessUrl: String,
-    val uploadedBy: String?,
-    val usageType: String?,
-    val isDeleted: Boolean,
-    val createdAt: java.time.LocalDateTime?,
-    val updatedAt: java.time.LocalDateTime?,
 )

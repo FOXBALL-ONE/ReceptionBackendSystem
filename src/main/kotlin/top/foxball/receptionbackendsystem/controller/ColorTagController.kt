@@ -12,56 +12,184 @@ import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.service.ColorTagService
-import top.foxball.receptionbackendsystem.shared.Response
+import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 
 @RestController
 @RequestMapping("/api/color-tags")
 class ColorTagController(
     private val colorTagService: ColorTagService,
-    responseBuilder: ResponseBuilder,
-) : ControllerSupport(responseBuilder) {
+    private val builder: ResponseBuilder,
+) : ControllerSupport(builder) {
     @PostMapping("/save-one")
-    fun saveOne(@RequestBody entity: ColorTag): ResponseEntity<Response> = ok(colorTagService.saveOne(entity))
+    fun saveOne(@RequestBody entity: ColorTag): ResponseEntity<ApiResponse> {
+        val colorTag = colorTagService.saveOne(entity)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = Response(
+            id = colorTag.id,
+            activityId = colorTag.activity?.id,
+            name = colorTag.name,
+            color = colorTag.color,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/save-batch")
-    fun saveBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<Response> =
-        ok(colorTagService.saveBatch(request.items))
+    fun saveBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<ApiResponse> {
+        val colorTags = colorTagService.saveBatch(request.items)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = colorTags.map { colorTag ->
+            Response(
+                id = colorTag.id,
+                activityId = colorTag.activity?.id,
+                name = colorTag.name,
+                color = colorTag.color,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/update-one")
-    fun updateOne(@RequestBody entity: ColorTag): ResponseEntity<Response> = ok(colorTagService.updateOne(entity))
+    fun updateOne(@RequestBody entity: ColorTag): ResponseEntity<ApiResponse> {
+        val colorTag = colorTagService.updateOne(entity)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = Response(
+            id = colorTag.id,
+            activityId = colorTag.activity?.id,
+            name = colorTag.name,
+            color = colorTag.color,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/update-batch")
-    fun updateBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<Response> =
-        ok(colorTagService.updateBatch(request.items))
+    fun updateBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<ApiResponse> {
+        val colorTags = colorTagService.updateBatch(request.items)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = colorTags.map { colorTag ->
+            Response(
+                id = colorTag.id,
+                activityId = colorTag.activity?.id,
+                name = colorTag.name,
+                color = colorTag.color,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/delete-one")
-    fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<Response> =
+    fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, colorTagService)
 
     @PostMapping("/delete-batch")
-    fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<Response> =
+    fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, colorTagService)
 
     @PostMapping("/find-by-id")
-    fun findById(@RequestBody request: IntIdRequest): ResponseEntity<Response> =
-        findById(request.id, colorTagService)
+    fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
+        val id = request.id ?: return badRequest("id is required")
+        val colorTag = colorTagService.findEntityById(id) ?: return notFound("entity not found")
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = Response(
+            id = colorTag.id,
+            activityId = colorTag.activity?.id,
+            name = colorTag.name,
+            color = colorTag.color,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/find-by-activity-id")
-    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<Response> {
+    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
-        return ok(colorTagService.findByActivityId(activityId))
+        val colorTags = colorTagService.findByActivityId(activityId)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = colorTags.map { colorTag ->
+            Response(
+                id = colorTag.id,
+                activityId = colorTag.activity?.id,
+                name = colorTag.name,
+                color = colorTag.color,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/find-by-name")
-    fun findByName(@RequestBody request: ActivityNameRequest): ResponseEntity<Response> {
+    fun findByName(@RequestBody request: ActivityNameRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val name = request.name?.takeIf { it.isNotBlank() } ?: return badRequest("name is required")
-        return ok(colorTagService.findByActivityIdAndName(activityId, name))
+        val colorTag = colorTagService.findByActivityIdAndName(activityId, name)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        val rs = colorTag?.let {
+            Response(
+                id = it.id,
+                activityId = it.activity?.id,
+                name = it.name,
+                color = it.color,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/exists-by-name")
-    fun existsByName(@RequestBody request: ActivityNameRequest): ResponseEntity<Response> {
+    fun existsByName(@RequestBody request: ActivityNameRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val name = request.name?.takeIf { it.isNotBlank() } ?: return badRequest("name is required")
         return ok(colorTagService.existsByActivityIdAndName(activityId, name))

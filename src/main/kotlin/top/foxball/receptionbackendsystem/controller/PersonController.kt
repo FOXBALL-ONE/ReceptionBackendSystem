@@ -13,57 +13,235 @@ import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
 import top.foxball.receptionbackendsystem.controller.request.NameRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
 import top.foxball.receptionbackendsystem.service.PersonService
-import top.foxball.receptionbackendsystem.shared.Response
+import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 
 @RestController
 @RequestMapping("/api/persons")
 class PersonController(
     private val personService: PersonService,
-    responseBuilder: ResponseBuilder,
-) : ControllerSupport(responseBuilder) {
+    private val builder: ResponseBuilder,
+) : ControllerSupport(builder) {
     @PostMapping("/save-one")
-    fun saveOne(@RequestBody entity: Person): ResponseEntity<Response> = ok(personService.saveOne(entity))
+    fun saveOne(@RequestBody entity: Person): ResponseEntity<ApiResponse> {
+        val person = personService.saveOne(entity)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = Response(
+            id = person.id,
+            activityId = person.activity?.id,
+            name = person.name,
+            unit = person.unit,
+            nickName = person.nickName,
+            inspectionTeamItemId = person.inspectionTeamItemId,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/save-batch")
-    fun saveBatch(@RequestBody request: EntityBatchRequest<Person>): ResponseEntity<Response> =
-        ok(personService.saveBatch(request.items))
+    fun saveBatch(@RequestBody request: EntityBatchRequest<Person>): ResponseEntity<ApiResponse> {
+        val persons = personService.saveBatch(request.items)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = persons.map { person ->
+            Response(
+                id = person.id,
+                activityId = person.activity?.id,
+                name = person.name,
+                unit = person.unit,
+                nickName = person.nickName,
+                inspectionTeamItemId = person.inspectionTeamItemId,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/update-one")
-    fun updateOne(@RequestBody entity: Person): ResponseEntity<Response> = ok(personService.updateOne(entity))
+    fun updateOne(@RequestBody entity: Person): ResponseEntity<ApiResponse> {
+        val person = personService.updateOne(entity)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = Response(
+            id = person.id,
+            activityId = person.activity?.id,
+            name = person.name,
+            unit = person.unit,
+            nickName = person.nickName,
+            inspectionTeamItemId = person.inspectionTeamItemId,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/update-batch")
-    fun updateBatch(@RequestBody request: EntityBatchRequest<Person>): ResponseEntity<Response> =
-        ok(personService.updateBatch(request.items))
+    fun updateBatch(@RequestBody request: EntityBatchRequest<Person>): ResponseEntity<ApiResponse> {
+        val persons = personService.updateBatch(request.items)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = persons.map { person ->
+            Response(
+                id = person.id,
+                activityId = person.activity?.id,
+                name = person.name,
+                unit = person.unit,
+                nickName = person.nickName,
+                inspectionTeamItemId = person.inspectionTeamItemId,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/delete-one")
-    fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<Response> =
+    fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, personService)
 
     @PostMapping("/delete-batch")
-    fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<Response> =
+    fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, personService)
 
     @PostMapping("/find-by-id")
-    fun findById(@RequestBody request: IntIdRequest): ResponseEntity<Response> =
-        findById(request.id, personService)
+    fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
+        val id = request.id ?: return badRequest("id is required")
+        val person = personService.findEntityById(id) ?: return notFound("entity not found")
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = Response(
+            id = person.id,
+            activityId = person.activity?.id,
+            name = person.name,
+            unit = person.unit,
+            nickName = person.nickName,
+            inspectionTeamItemId = person.inspectionTeamItemId,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/find-by-activity-id")
-    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<Response> {
+    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
-        return ok(personService.findByActivityId(activityId))
+        val persons = personService.findByActivityId(activityId)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = persons.map { person ->
+            Response(
+                id = person.id,
+                activityId = person.activity?.id,
+                name = person.name,
+                unit = person.unit,
+                nickName = person.nickName,
+                inspectionTeamItemId = person.inspectionTeamItemId,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/find-by-name-containing")
-    fun findByNameContaining(@RequestBody request: NameRequest): ResponseEntity<Response> {
+    fun findByNameContaining(@RequestBody request: NameRequest): ResponseEntity<ApiResponse> {
         val name = request.name?.takeIf { it.isNotBlank() } ?: return badRequest("name is required")
-        return ok(personService.findByNameContaining(name))
+        val persons = personService.findByNameContaining(name)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = persons.map { person ->
+            Response(
+                id = person.id,
+                activityId = person.activity?.id,
+                name = person.name,
+                unit = person.unit,
+                nickName = person.nickName,
+                inspectionTeamItemId = person.inspectionTeamItemId,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/find-by-unit")
-    fun findByUnit(@RequestBody request: ActivityUnitRequest): ResponseEntity<Response> {
+    fun findByUnit(@RequestBody request: ActivityUnitRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val unit = request.unit?.takeIf { it.isNotBlank() } ?: return badRequest("unit is required")
-        return ok(personService.findByActivityIdAndUnit(activityId, unit))
+        val persons = personService.findByActivityIdAndUnit(activityId, unit)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = persons.map { person ->
+            Response(
+                id = person.id,
+                activityId = person.activity?.id,
+                name = person.name,
+                unit = person.unit,
+                nickName = person.nickName,
+                inspectionTeamItemId = person.inspectionTeamItemId,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 }
