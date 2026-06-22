@@ -3,11 +3,11 @@ package top.foxball.receptionbackendsystem.datasource.jdbc
 /**
  * 活动配置数据仓库。
  */
-interface ActivitiesRepository : ReceptionRepository<Activities, Int> {
+interface ActivitiesRepository : ReceptionRepository<Activities, Long> {
     /**
      * 根据活动 ID 查询活动。
      */
-    fun findByActivityId(activityId: Int): Activities? = findEntityById(activityId)
+    fun findByActivityId(activityId: Long): Activities? = findEntityById(activityId)
 
     /**
      * 根据活动访问地址查询活动。

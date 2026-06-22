@@ -9,9 +9,9 @@ import top.foxball.receptionbackendsystem.service.ActivitiesService
 @Service
 class ActivitiesServiceImpl(
     private val activitiesRepository: ActivitiesRepository,
-) : AbstractReceptionService<Activities, Int>(activitiesRepository), ActivitiesService {
+) : AbstractReceptionService<Activities, Long>(activitiesRepository), ActivitiesService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): Activities? =
+    override fun findByActivityId(activityId: Long): Activities? =
         activitiesRepository.findByActivityId(activityId)
 
     @Transactional(readOnly = true)

@@ -7,5 +7,5 @@ interface OverviewOfTheCityAndCountyRepository : ReceptionRepository<OverviewOfT
     /**
      * 查询指定活动下的全部市县概况。
      */
-    fun findByActivityId(activityId: Int): List<OverviewOfTheCityAndCounty>
+    fun findByActivityId(activityId: Long): List<OverviewOfTheCityAndCounty>
 }

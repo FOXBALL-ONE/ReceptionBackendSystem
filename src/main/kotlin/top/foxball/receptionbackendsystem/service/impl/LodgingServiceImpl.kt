@@ -11,6 +11,6 @@ class LodgingServiceImpl(
     private val lodgingRepository: LodgingRepository,
 ) : AbstractReceptionService<Lodging, Int>(lodgingRepository), LodgingService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<Lodging> =
+    override fun findByActivityId(activityId: Long): List<Lodging> =
         lodgingRepository.findByActivityId(activityId)
 }

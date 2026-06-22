@@ -7,7 +7,7 @@ interface ColorTagRepository : ReceptionRepository<ColorTag, Int> {
     /**
      * 查询指定活动下的全部颜色标签。
      */
-    fun findByActivityId(activityId: Int): List<ColorTag>
+    fun findByActivityId(activityId: Long): List<ColorTag>
 
     /**
      * 根据标签名称查询颜色标签。
@@ -17,7 +17,7 @@ interface ColorTagRepository : ReceptionRepository<ColorTag, Int> {
     /**
      * 查询指定活动下的指定颜色标签。
      */
-    fun findByActivityIdAndName(activityId: Int, name: String): ColorTag?
+    fun findByActivityIdAndName(activityId: Long, name: String): ColorTag?
 
     /**
      * 判断指定标签名称是否已存在。
@@ -27,5 +27,5 @@ interface ColorTagRepository : ReceptionRepository<ColorTag, Int> {
     /**
      * 判断指定活动下的标签名称是否已存在。
      */
-    fun existsByActivityIdAndName(activityId: Int, name: String): Boolean
+    fun existsByActivityIdAndName(activityId: Long, name: String): Boolean
 }

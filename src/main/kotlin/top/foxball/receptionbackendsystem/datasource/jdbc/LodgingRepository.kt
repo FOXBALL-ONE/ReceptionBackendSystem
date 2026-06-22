@@ -7,5 +7,5 @@ interface LodgingRepository : ReceptionRepository<Lodging, Int> {
     /**
      * 查询指定活动下的全部住宿安排。
      */
-    fun findByActivityId(activityId: Int): List<Lodging>
+    fun findByActivityId(activityId: Long): List<Lodging>
 }

@@ -2,8 +2,8 @@ package top.foxball.receptionbackendsystem.service
 
 import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
 
-interface ActivitiesService : ReceptionService<Activities, Int> {
-    fun findByActivityId(activityId: Int): Activities?
+interface ActivitiesService : ReceptionService<Activities, Long> {
+    fun findByActivityId(activityId: Long): Activities?
 
     fun findByUrl(url: String): Activities?
 

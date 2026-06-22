@@ -17,7 +17,7 @@ data class LongIdsRequest(
 )
 
 data class ActivityIdRequest(
-    val activityId: Int? = null,
+    val activityId: Long? = null,
 )
 
 data class UrlRequest(
@@ -29,17 +29,17 @@ data class NameRequest(
 )
 
 data class ActivityNameRequest(
-    val activityId: Int? = null,
+    val activityId: Long? = null,
     val name: String? = null,
 )
 
 data class ActivityUnitRequest(
-    val activityId: Int? = null,
+    val activityId: Long? = null,
     val unit: String? = null,
 )
 
 data class ActivityCarNumberRequest(
-    val activityId: Int? = null,
+    val activityId: Long? = null,
     val carNumber: Long? = null,
 )
 

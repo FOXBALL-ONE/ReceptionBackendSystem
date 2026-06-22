@@ -15,7 +15,7 @@ data class Activities(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    var id: Int? = null,
+    var id: Long? = null,
 
     /** 活动访问地址或路由地址。 */
     @Column(name = "url")

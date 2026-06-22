@@ -7,5 +7,5 @@ interface MealRepository : ReceptionRepository<Meal, Int> {
     /**
      * 查询指定活动下的全部用餐安排。
      */
-    fun findByActivityId(activityId: Int): List<Meal>
+    fun findByActivityId(activityId: Long): List<Meal>
 }

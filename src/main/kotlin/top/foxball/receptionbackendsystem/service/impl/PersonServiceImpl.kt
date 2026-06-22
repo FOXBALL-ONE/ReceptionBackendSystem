@@ -11,7 +11,7 @@ class PersonServiceImpl(
     private val personRepository: PersonRepository,
 ) : AbstractReceptionService<Person, Int>(personRepository), PersonService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<Person> =
+    override fun findByActivityId(activityId: Long): List<Person> =
         personRepository.findByActivityId(activityId)
 
     @Transactional(readOnly = true)
@@ -19,6 +19,6 @@ class PersonServiceImpl(
         personRepository.findByNameContaining(name)
 
     @Transactional(readOnly = true)
-    override fun findByActivityIdAndUnit(activityId: Int, unit: String): List<Person> =
+    override fun findByActivityIdAndUnit(activityId: Long, unit: String): List<Person> =
         personRepository.findByActivityIdAndUnit(activityId, unit)
 }

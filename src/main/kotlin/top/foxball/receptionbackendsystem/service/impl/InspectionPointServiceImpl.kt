@@ -11,6 +11,6 @@ class InspectionPointServiceImpl(
     private val inspectionPointRepository: InspectionPointRepository,
 ) : AbstractReceptionService<InspectionPoint, Int>(inspectionPointRepository), InspectionPointService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<InspectionPoint> =
+    override fun findByActivityId(activityId: Long): List<InspectionPoint> =
         inspectionPointRepository.findByActivityId(activityId)
 }

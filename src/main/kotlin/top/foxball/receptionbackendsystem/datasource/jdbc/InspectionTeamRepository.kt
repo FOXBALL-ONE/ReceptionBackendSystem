@@ -7,7 +7,7 @@ interface InspectionTeamRepository : ReceptionRepository<InspectionTeamItem, Lon
     /**
      * 查询指定活动下的全部考察组安排。
      */
-    fun findByActivityId(activityId: Int): List<InspectionTeamItem>
+    fun findByActivityId(activityId: Long): List<InspectionTeamItem>
 
     /**
      * 根据考察组名称模糊查询。

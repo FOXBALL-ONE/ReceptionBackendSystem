@@ -7,5 +7,5 @@ interface InspectionPointRepository : ReceptionRepository<InspectionPoint, Int> 
     /**
      * 查询指定活动下的全部考察点。
      */
-    fun findByActivityId(activityId: Int): List<InspectionPoint>
+    fun findByActivityId(activityId: Long): List<InspectionPoint>
 }

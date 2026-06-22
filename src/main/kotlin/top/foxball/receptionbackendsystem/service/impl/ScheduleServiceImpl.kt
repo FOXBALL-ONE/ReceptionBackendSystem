@@ -11,7 +11,7 @@ class ScheduleServiceImpl(
     private val scheduleRepository: ScheduleRepository,
 ) : AbstractReceptionService<Schedule, Long>(scheduleRepository), ScheduleService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<Schedule> =
+    override fun findByActivityId(activityId: Long): List<Schedule> =
         scheduleRepository.findByActivityId(activityId)
 
     @Transactional(readOnly = true)

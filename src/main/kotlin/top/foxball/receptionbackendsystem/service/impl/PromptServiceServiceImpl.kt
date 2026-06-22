@@ -11,6 +11,6 @@ class PromptServiceServiceImpl(
     private val promptServiceRepository: PromptServiceRepository,
 ) : AbstractReceptionService<PromptService, Int>(promptServiceRepository), PromptServiceService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<PromptService> =
+    override fun findByActivityId(activityId: Long): List<PromptService> =
         promptServiceRepository.findByActivityId(activityId)
 }

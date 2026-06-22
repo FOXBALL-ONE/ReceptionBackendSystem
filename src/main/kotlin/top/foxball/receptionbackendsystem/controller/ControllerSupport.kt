@@ -57,5 +57,5 @@ abstract class ControllerSupport(
         )
     }
 
-    protected fun requireActivityId(activityId: Int?): Int? = activityId
+    protected fun requireActivityId(activityId: Long?): Long? = activityId
 }

@@ -7,7 +7,7 @@ interface ScheduleRepository : ReceptionRepository<Schedule, Long> {
     /**
      * 查询指定活动下的全部日程。
      */
-    fun findByActivityId(activityId: Int): List<Schedule>
+    fun findByActivityId(activityId: Long): List<Schedule>
 
     /**
      * 根据日程标签模糊查询。

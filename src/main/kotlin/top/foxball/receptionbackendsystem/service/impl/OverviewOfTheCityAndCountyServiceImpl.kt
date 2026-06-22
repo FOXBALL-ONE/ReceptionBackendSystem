@@ -11,6 +11,6 @@ class OverviewOfTheCityAndCountyServiceImpl(
     private val overviewRepository: OverviewOfTheCityAndCountyRepository,
 ) : AbstractReceptionService<OverviewOfTheCityAndCounty, Int>(overviewRepository), OverviewOfTheCityAndCountyService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<OverviewOfTheCityAndCounty> =
+    override fun findByActivityId(activityId: Long): List<OverviewOfTheCityAndCounty> =
         overviewRepository.findByActivityId(activityId)
 }

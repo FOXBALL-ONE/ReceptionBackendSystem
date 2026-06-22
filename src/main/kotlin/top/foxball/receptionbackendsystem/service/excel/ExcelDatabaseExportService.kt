@@ -31,7 +31,7 @@ class ExcelDatabaseExportService(
     private val activitiesRepository: ActivitiesRepository,
 ) {
     @Transactional(readOnly = true)
-    fun exportActivity(activityId: Int, outputStream: OutputStream) {
+    fun exportActivity(activityId: Long, outputStream: OutputStream) {
         val activity = activitiesRepository.findById(activityId)
             .orElseThrow { ResourceNotFoundException("活动不存在：$activityId") }
 

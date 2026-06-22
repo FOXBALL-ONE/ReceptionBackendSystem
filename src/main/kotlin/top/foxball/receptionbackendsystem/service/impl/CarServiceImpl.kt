@@ -11,10 +11,10 @@ class CarServiceImpl(
     private val carRepository: CarRepository,
 ) : AbstractReceptionService<Car, Int>(carRepository), CarService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<Car> =
+    override fun findByActivityId(activityId: Long): List<Car> =
         carRepository.findByActivityId(activityId)
 
     @Transactional(readOnly = true)
-    override fun findByActivityIdAndCarNumber(activityId: Int, carNumber: Long): Car? =
+    override fun findByActivityIdAndCarNumber(activityId: Long, carNumber: Long): Car? =
         carRepository.findByActivityIdAndCarNumber(activityId, carNumber)
 }

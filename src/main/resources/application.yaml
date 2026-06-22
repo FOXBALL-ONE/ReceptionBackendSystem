@@ -53,9 +53,9 @@ spring:
         order_inserts: true
         order_updates: true
 
-Image:
+image:
     storage: ./images
-    BaseURL: http://localhost:8080/images/
+    base-url: http://localhost:8080/images
 
 logging:
   level:

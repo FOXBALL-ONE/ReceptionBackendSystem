@@ -361,7 +361,7 @@ data class ExcelDatabaseImportOptions(
 )
 
 data class ExcelDatabaseImportResult(
-    val activityId: Int?,
+    val activityId: Long?,
     val url: String?,
     val personnelCount: Int,
     val carCount: Int,

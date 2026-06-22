@@ -11,14 +11,14 @@ class ColorTagServiceImpl(
     private val colorTagRepository: ColorTagRepository,
 ) : AbstractReceptionService<ColorTag, Int>(colorTagRepository), ColorTagService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<ColorTag> =
+    override fun findByActivityId(activityId: Long): List<ColorTag> =
         colorTagRepository.findByActivityId(activityId)
 
     @Transactional(readOnly = true)
-    override fun findByActivityIdAndName(activityId: Int, name: String): ColorTag? =
+    override fun findByActivityIdAndName(activityId: Long, name: String): ColorTag? =
         colorTagRepository.findByActivityIdAndName(activityId, name)
 
     @Transactional(readOnly = true)
-    override fun existsByActivityIdAndName(activityId: Int, name: String): Boolean =
+    override fun existsByActivityIdAndName(activityId: Long, name: String): Boolean =
         colorTagRepository.existsByActivityIdAndName(activityId, name)
 }

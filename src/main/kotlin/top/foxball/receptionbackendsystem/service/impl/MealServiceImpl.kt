@@ -11,6 +11,6 @@ class MealServiceImpl(
     private val mealRepository: MealRepository,
 ) : AbstractReceptionService<Meal, Int>(mealRepository), MealService {
     @Transactional(readOnly = true)
-    override fun findByActivityId(activityId: Int): List<Meal> =
+    override fun findByActivityId(activityId: Long): List<Meal> =
         mealRepository.findByActivityId(activityId)
 }
