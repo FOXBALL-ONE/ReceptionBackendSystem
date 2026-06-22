@@ -9,6 +9,7 @@ import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdsRequest
+import top.foxball.receptionbackendsystem.controller.request.ScheduleSaveRequest
 import top.foxball.receptionbackendsystem.controller.request.ScheduleTagsRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
@@ -22,6 +23,30 @@ class ScheduleController(
     private val scheduleService: ScheduleService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: ScheduleSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val schedules = scheduleService.saveByActivity(activityId, request.schedules)
+
+        data class Response(
+            val id: Long?,
+            val activityId: Long?,
+            val scheduleTags: String?,
+            val inspectionTeamItem: List<InspectionTeamItem>,
+        )
+
+        val rs = schedules.map { schedule ->
+            Response(
+                id = schedule.id,
+                activityId = schedule.activity?.id,
+                scheduleTags = schedule.scheduleTags,
+                inspectionTeamItem = schedule.inspectionTeamItem,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Schedule): ResponseEntity<ApiResponse> {
         val schedule = scheduleService.saveOne(entity)

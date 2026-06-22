@@ -1,5 +1,7 @@
 package top.foxball.receptionbackendsystem.controller.request
 
+import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+
 data class IntIdRequest(
     val id: Int? = null,
 )
@@ -45,6 +47,11 @@ data class ActivityCarNumberRequest(
 
 data class ScheduleTagsRequest(
     val scheduleTags: String? = null,
+)
+
+data class ScheduleSaveRequest(
+    val activityId: Long? = null,
+    val schedules: List<Schedule> = emptyList(),
 )
 
 data class EntityBatchRequest<T>(

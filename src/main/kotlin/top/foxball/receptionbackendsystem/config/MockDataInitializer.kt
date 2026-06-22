@@ -2,34 +2,13 @@ package top.foxball.receptionbackendsystem.config
 
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
-import org.springframework.context.annotation.Profile
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
-import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
-import top.foxball.receptionbackendsystem.datasource.jdbc.Car
-import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
-import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.Image
-import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
-import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
-import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
-import top.foxball.receptionbackendsystem.datasource.jdbc.NoteItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.OneStaff
-import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
-import top.foxball.receptionbackendsystem.datasource.jdbc.ParagraphContentItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.PassengersOnBoardItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.Person
-import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
-import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
-import top.foxball.receptionbackendsystem.datasource.jdbc.StaffItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.WeatherItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.*
 import java.time.LocalDateTime
 
 @Component
-@Profile("dev", "test")
 class MockDataInitializer(
     private val activitiesRepository: ActivitiesRepository,
 ) {
