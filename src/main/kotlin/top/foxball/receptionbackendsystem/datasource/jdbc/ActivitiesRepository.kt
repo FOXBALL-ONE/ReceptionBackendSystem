@@ -4,6 +4,8 @@ package top.foxball.receptionbackendsystem.datasource.jdbc
  * 活动配置数据仓库。
  */
 interface ActivitiesRepository : ReceptionRepository<Activities, Long> {
+    fun findAllByOrderByStartTimeAsc(): List<Activities>
+
     /**
      * 根据活动 ID 查询活动。
      */

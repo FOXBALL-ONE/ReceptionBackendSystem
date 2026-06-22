@@ -11,6 +11,10 @@ class ActivitiesServiceImpl(
     private val activitiesRepository: ActivitiesRepository,
 ) : AbstractReceptionService<Activities, Long>(activitiesRepository), ActivitiesService {
     @Transactional(readOnly = true)
+    override fun findAllActivities(): List<Activities> =
+        activitiesRepository.findAllByOrderByStartTimeAsc()
+
+    @Transactional(readOnly = true)
     override fun findByActivityId(activityId: Long): Activities? =
         activitiesRepository.findByActivityId(activityId)
 

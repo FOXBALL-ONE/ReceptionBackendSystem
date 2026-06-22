@@ -11,63 +11,686 @@ import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdsRequest
 import top.foxball.receptionbackendsystem.controller.request.UrlRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
+import top.foxball.receptionbackendsystem.datasource.jdbc.Car
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
+import top.foxball.receptionbackendsystem.datasource.jdbc.Image
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
+import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
+import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
+import top.foxball.receptionbackendsystem.datasource.jdbc.Person
+import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
+import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
 import top.foxball.receptionbackendsystem.service.ActivitiesService
-import top.foxball.receptionbackendsystem.shared.Response
+import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
+import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/api/activities")
 class ActivitiesController(
     private val activitiesService: ActivitiesService,
-    responseBuilder: ResponseBuilder,
-) : ControllerSupport(responseBuilder) {
+    private val builder: ResponseBuilder,
+) : ControllerSupport(builder) {
     @PostMapping("/save-one")
-    fun saveOne(@RequestBody entity: Activities): ResponseEntity<Response> =
-        ok(activitiesService.saveOne(entity))
+    fun saveOne(@RequestBody entity: Activities): ResponseEntity<ApiResponse> {
+        val activity = activitiesService.saveOne(entity)
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = Response(
+            id = activity.id,
+            url = activity.url,
+            masterTitle = activity.masterTitle,
+            subtitle = activity.subtitle,
+            name = activity.name,
+            startTime = activity.startTime,
+            endTime = activity.endTime,
+            bannerTags = activity.bannerTags,
+            bannerUrl = activity.bannerUrl,
+            isAnimation = activity.isAnimation,
+            isTopNavigationBar = activity.isTopNavigationBar,
+            icp = activity.icp,
+            technicalSupport = activity.technicalSupport,
+            isOpen = activity.isOpen,
+            schedules = activity.schedules,
+            carList = activity.carList,
+            personList = activity.personList,
+            imageList = activity.imageList,
+            promptServiceList = activity.promptServiceList,
+            colorTagList = activity.colorTagList,
+            inspectionTeamItemList = activity.inspectionTeamItemList,
+            mealList = activity.mealList,
+            hostedList = activity.hostedList,
+            inspectionPoints = activity.inspectionPoints,
+            overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/save-batch")
-    fun saveBatch(@RequestBody request: EntityBatchRequest<Activities>): ResponseEntity<Response> =
-        ok(activitiesService.saveBatch(request.items))
+    fun saveBatch(@RequestBody request: EntityBatchRequest<Activities>): ResponseEntity<ApiResponse> {
+        val activities = activitiesService.saveBatch(request.items)
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activities.map { activity ->
+            Response(
+                id = activity.id,
+                url = activity.url,
+                masterTitle = activity.masterTitle,
+                subtitle = activity.subtitle,
+                name = activity.name,
+                startTime = activity.startTime,
+                endTime = activity.endTime,
+                bannerTags = activity.bannerTags,
+                bannerUrl = activity.bannerUrl,
+                isAnimation = activity.isAnimation,
+                isTopNavigationBar = activity.isTopNavigationBar,
+                icp = activity.icp,
+                technicalSupport = activity.technicalSupport,
+                isOpen = activity.isOpen,
+                schedules = activity.schedules,
+                carList = activity.carList,
+                personList = activity.personList,
+                imageList = activity.imageList,
+                promptServiceList = activity.promptServiceList,
+                colorTagList = activity.colorTagList,
+                inspectionTeamItemList = activity.inspectionTeamItemList,
+                mealList = activity.mealList,
+                hostedList = activity.hostedList,
+                inspectionPoints = activity.inspectionPoints,
+                overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/update-one")
-    fun updateOne(@RequestBody entity: Activities): ResponseEntity<Response> =
-        ok(activitiesService.updateOne(entity))
+    fun updateOne(@RequestBody entity: Activities): ResponseEntity<ApiResponse> {
+        val activity = activitiesService.updateOne(entity)
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = Response(
+            id = activity.id,
+            url = activity.url,
+            masterTitle = activity.masterTitle,
+            subtitle = activity.subtitle,
+            name = activity.name,
+            startTime = activity.startTime,
+            endTime = activity.endTime,
+            bannerTags = activity.bannerTags,
+            bannerUrl = activity.bannerUrl,
+            isAnimation = activity.isAnimation,
+            isTopNavigationBar = activity.isTopNavigationBar,
+            icp = activity.icp,
+            technicalSupport = activity.technicalSupport,
+            isOpen = activity.isOpen,
+            schedules = activity.schedules,
+            carList = activity.carList,
+            personList = activity.personList,
+            imageList = activity.imageList,
+            promptServiceList = activity.promptServiceList,
+            colorTagList = activity.colorTagList,
+            inspectionTeamItemList = activity.inspectionTeamItemList,
+            mealList = activity.mealList,
+            hostedList = activity.hostedList,
+            inspectionPoints = activity.inspectionPoints,
+            overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+        )
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/update-batch")
-    fun updateBatch(@RequestBody request: EntityBatchRequest<Activities>): ResponseEntity<Response> =
-        ok(activitiesService.updateBatch(request.items))
+    fun updateBatch(@RequestBody request: EntityBatchRequest<Activities>): ResponseEntity<ApiResponse> {
+        val activities = activitiesService.updateBatch(request.items)
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activities.map { activity ->
+            Response(
+                id = activity.id,
+                url = activity.url,
+                masterTitle = activity.masterTitle,
+                subtitle = activity.subtitle,
+                name = activity.name,
+                startTime = activity.startTime,
+                endTime = activity.endTime,
+                bannerTags = activity.bannerTags,
+                bannerUrl = activity.bannerUrl,
+                isAnimation = activity.isAnimation,
+                isTopNavigationBar = activity.isTopNavigationBar,
+                icp = activity.icp,
+                technicalSupport = activity.technicalSupport,
+                isOpen = activity.isOpen,
+                schedules = activity.schedules,
+                carList = activity.carList,
+                personList = activity.personList,
+                imageList = activity.imageList,
+                promptServiceList = activity.promptServiceList,
+                colorTagList = activity.colorTagList,
+                inspectionTeamItemList = activity.inspectionTeamItemList,
+                mealList = activity.mealList,
+                hostedList = activity.hostedList,
+                inspectionPoints = activity.inspectionPoints,
+                overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/delete-one")
-    fun deleteOne(@RequestBody request: LongIdRequest): ResponseEntity<Response> =
+    fun deleteOne(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, activitiesService)
 
     @PostMapping("/delete-batch")
-    fun deleteBatch(@RequestBody request: LongIdsRequest): ResponseEntity<Response> =
+    fun deleteBatch(@RequestBody request: LongIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, activitiesService)
 
     @PostMapping("/find-by-id")
-    fun findById(@RequestBody request: LongIdRequest): ResponseEntity<Response> =
-        findById(request.id, activitiesService)
+    fun findById(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> {
+        val id = request.id ?: return badRequest("id is required")
+        val activity = activitiesService.findEntityById(id) ?: return notFound("entity not found")
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = Response(
+            id = activity.id,
+            url = activity.url,
+            masterTitle = activity.masterTitle,
+            subtitle = activity.subtitle,
+            name = activity.name,
+            startTime = activity.startTime,
+            endTime = activity.endTime,
+            bannerTags = activity.bannerTags,
+            bannerUrl = activity.bannerUrl,
+            isAnimation = activity.isAnimation,
+            isTopNavigationBar = activity.isTopNavigationBar,
+            icp = activity.icp,
+            technicalSupport = activity.technicalSupport,
+            isOpen = activity.isOpen,
+            schedules = activity.schedules,
+            carList = activity.carList,
+            personList = activity.personList,
+            imageList = activity.imageList,
+            promptServiceList = activity.promptServiceList,
+            colorTagList = activity.colorTagList,
+            inspectionTeamItemList = activity.inspectionTeamItemList,
+            mealList = activity.mealList,
+            hostedList = activity.hostedList,
+            inspectionPoints = activity.inspectionPoints,
+            overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+        )
+
+        return builder.ok().data(rs).build()
+    }
+
+    @PostMapping("/list")
+    fun list(): ResponseEntity<ApiResponse> {
+        val activities = activitiesService.findAllActivities()
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activities.map { activity ->
+            Response(
+                id = activity.id,
+                url = activity.url,
+                masterTitle = activity.masterTitle,
+                subtitle = activity.subtitle,
+                name = activity.name,
+                startTime = activity.startTime,
+                endTime = activity.endTime,
+                bannerTags = activity.bannerTags,
+                bannerUrl = activity.bannerUrl,
+                isAnimation = activity.isAnimation,
+                isTopNavigationBar = activity.isTopNavigationBar,
+                icp = activity.icp,
+                technicalSupport = activity.technicalSupport,
+                isOpen = activity.isOpen,
+                schedules = activity.schedules,
+                carList = activity.carList,
+                personList = activity.personList,
+                imageList = activity.imageList,
+                promptServiceList = activity.promptServiceList,
+                colorTagList = activity.colorTagList,
+                inspectionTeamItemList = activity.inspectionTeamItemList,
+                mealList = activity.mealList,
+                hostedList = activity.hostedList,
+                inspectionPoints = activity.inspectionPoints,
+                overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
+
+    @PostMapping("/find-all")
+    fun findAll(): ResponseEntity<ApiResponse> {
+        val activities = activitiesService.findAllActivities()
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activities.map { activity ->
+            Response(
+                id = activity.id,
+                url = activity.url,
+                masterTitle = activity.masterTitle,
+                subtitle = activity.subtitle,
+                name = activity.name,
+                startTime = activity.startTime,
+                endTime = activity.endTime,
+                bannerTags = activity.bannerTags,
+                bannerUrl = activity.bannerUrl,
+                isAnimation = activity.isAnimation,
+                isTopNavigationBar = activity.isTopNavigationBar,
+                icp = activity.icp,
+                technicalSupport = activity.technicalSupport,
+                isOpen = activity.isOpen,
+                schedules = activity.schedules,
+                carList = activity.carList,
+                personList = activity.personList,
+                imageList = activity.imageList,
+                promptServiceList = activity.promptServiceList,
+                colorTagList = activity.colorTagList,
+                inspectionTeamItemList = activity.inspectionTeamItemList,
+                mealList = activity.mealList,
+                hostedList = activity.hostedList,
+                inspectionPoints = activity.inspectionPoints,
+                overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 
     @PostMapping("/find-by-activity-id")
-    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<Response> {
+    fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
-        return ok(activitiesService.findByActivityId(activityId))
+        val activity = activitiesService.findByActivityId(activityId)
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activity?.let {
+            Response(
+                id = it.id,
+                url = it.url,
+                masterTitle = it.masterTitle,
+                subtitle = it.subtitle,
+                name = it.name,
+                startTime = it.startTime,
+                endTime = it.endTime,
+                bannerTags = it.bannerTags,
+                bannerUrl = it.bannerUrl,
+                isAnimation = it.isAnimation,
+                isTopNavigationBar = it.isTopNavigationBar,
+                icp = it.icp,
+                technicalSupport = it.technicalSupport,
+                isOpen = it.isOpen,
+                schedules = it.schedules,
+                carList = it.carList,
+                personList = it.personList,
+                imageList = it.imageList,
+                promptServiceList = it.promptServiceList,
+                colorTagList = it.colorTagList,
+                inspectionTeamItemList = it.inspectionTeamItemList,
+                mealList = it.mealList,
+                hostedList = it.hostedList,
+                inspectionPoints = it.inspectionPoints,
+                overviewOfTheCityAndCounty = it.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/find-by-url")
-    fun findByUrl(@RequestBody request: UrlRequest): ResponseEntity<Response> {
+    fun findByUrl(@RequestBody request: UrlRequest): ResponseEntity<ApiResponse> {
         val url = request.url?.takeIf { it.isNotBlank() } ?: return badRequest("url is required")
-        return ok(activitiesService.findByUrl(url))
+        val activity = activitiesService.findByUrl(url)
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activity?.let {
+            Response(
+                id = it.id,
+                url = it.url,
+                masterTitle = it.masterTitle,
+                subtitle = it.subtitle,
+                name = it.name,
+                startTime = it.startTime,
+                endTime = it.endTime,
+                bannerTags = it.bannerTags,
+                bannerUrl = it.bannerUrl,
+                isAnimation = it.isAnimation,
+                isTopNavigationBar = it.isTopNavigationBar,
+                icp = it.icp,
+                technicalSupport = it.technicalSupport,
+                isOpen = it.isOpen,
+                schedules = it.schedules,
+                carList = it.carList,
+                personList = it.personList,
+                imageList = it.imageList,
+                promptServiceList = it.promptServiceList,
+                colorTagList = it.colorTagList,
+                inspectionTeamItemList = it.inspectionTeamItemList,
+                mealList = it.mealList,
+                hostedList = it.hostedList,
+                inspectionPoints = it.inspectionPoints,
+                overviewOfTheCityAndCounty = it.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
     }
 
     @PostMapping("/exists-by-url")
-    fun existsByUrl(@RequestBody request: UrlRequest): ResponseEntity<Response> {
+    fun existsByUrl(@RequestBody request: UrlRequest): ResponseEntity<ApiResponse> {
         val url = request.url?.takeIf { it.isNotBlank() } ?: return badRequest("url is required")
         return ok(activitiesService.existsByUrl(url))
     }
 
     @PostMapping("/find-open")
-    fun findOpen(): ResponseEntity<Response> =
-        ok(activitiesService.findOpenActivities())
+    fun findOpen(): ResponseEntity<ApiResponse> {
+        val activities = activitiesService.findOpenActivities()
+
+        data class Response(
+            val id: Long?,
+            val url: String?,
+            val masterTitle: String?,
+            val subtitle: String?,
+            val name: String?,
+            val startTime: LocalDateTime?,
+            val endTime: LocalDateTime?,
+            val bannerTags: String?,
+            val bannerUrl: String?,
+            val isAnimation: Boolean?,
+            val isTopNavigationBar: Boolean?,
+            val icp: String?,
+            val technicalSupport: String?,
+            val isOpen: Boolean?,
+            val schedules: List<Schedule>,
+            val carList: List<Car>,
+            val personList: List<Person>,
+            val imageList: List<Image>,
+            val promptServiceList: List<PromptService>,
+            val colorTagList: List<ColorTag>,
+            val inspectionTeamItemList: List<InspectionTeamItem>,
+            val mealList: List<Meal>,
+            val hostedList: List<Lodging>,
+            val inspectionPoints: List<InspectionPoint>,
+            val overviewOfTheCityAndCounty: List<OverviewOfTheCityAndCounty>,
+        )
+
+        val rs = activities.map { activity ->
+            Response(
+                id = activity.id,
+                url = activity.url,
+                masterTitle = activity.masterTitle,
+                subtitle = activity.subtitle,
+                name = activity.name,
+                startTime = activity.startTime,
+                endTime = activity.endTime,
+                bannerTags = activity.bannerTags,
+                bannerUrl = activity.bannerUrl,
+                isAnimation = activity.isAnimation,
+                isTopNavigationBar = activity.isTopNavigationBar,
+                icp = activity.icp,
+                technicalSupport = activity.technicalSupport,
+                isOpen = activity.isOpen,
+                schedules = activity.schedules,
+                carList = activity.carList,
+                personList = activity.personList,
+                imageList = activity.imageList,
+                promptServiceList = activity.promptServiceList,
+                colorTagList = activity.colorTagList,
+                inspectionTeamItemList = activity.inspectionTeamItemList,
+                mealList = activity.mealList,
+                hostedList = activity.hostedList,
+                inspectionPoints = activity.inspectionPoints,
+                overviewOfTheCityAndCounty = activity.overviewOfTheCityAndCounty,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
 }
