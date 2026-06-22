@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
+import top.foxball.receptionbackendsystem.controller.request.InspectionPointSaveRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
@@ -20,6 +21,30 @@ class InspectionPointController(
     private val inspectionPointService: InspectionPointService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: InspectionPointSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val inspectionPoints = inspectionPointService.saveByActivity(activityId, request.inspectionPoints)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val imageURL: String?,
+            val description: String?,
+        )
+
+        val rs = inspectionPoints.map { inspectionPoint ->
+            Response(
+                id = inspectionPoint.id,
+                activityId = inspectionPoint.activity?.id,
+                imageURL = inspectionPoint.imageURL,
+                description = inspectionPoint.description,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: InspectionPoint): ResponseEntity<ApiResponse> {
         val inspectionPoint = inspectionPointService.saveOne(entity)

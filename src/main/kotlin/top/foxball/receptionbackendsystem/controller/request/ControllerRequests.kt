@@ -1,10 +1,16 @@
 package top.foxball.receptionbackendsystem.controller.request
 
-import top.foxball.receptionbackendsystem.datasource.jdbc.Person
-import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
-import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
+import top.foxball.receptionbackendsystem.datasource.jdbc.Car
 import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
 import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
+import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
+import top.foxball.receptionbackendsystem.datasource.jdbc.NoteItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Person
+import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
+import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+import top.foxball.receptionbackendsystem.datasource.jdbc.StaffItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.WeatherItem
 
 data class IntIdRequest(
     val id: Int? = null,
@@ -73,6 +79,38 @@ data class LodgingSaveRequest(
     val colorTags: List<ColorTag> = emptyList(),
     val lodgings: List<Lodging> = emptyList(),
 )
+
+data class InspectionPointSaveRequest(
+    val activityId: Long? = null,
+    val inspectionPoints: List<InspectionPoint> = emptyList(),
+)
+
+data class CarSaveRequest(
+    val activityId: Long? = null,
+    val cars: List<Car> = emptyList(),
+)
+
+data class PromptServiceSaveRequest(
+    val activityId: Long? = null,
+    val id: Int? = null,
+    val staffList: List<StaffItem> = emptyList(),
+    val noteList: List<NoteItem> = emptyList(),
+    val weatherList: List<WeatherItem> = emptyList(),
+    val attendanceInstructionsMode: Boolean? = null,
+    val attendanceInstructionsTitle: String? = null,
+    val attendanceInstructionsContent: String? = null,
+) {
+    fun toEntity(): PromptService =
+        PromptService(
+            id = id,
+            staffList = staffList.toMutableList(),
+            noteList = noteList.toMutableList(),
+            weatherList = weatherList.toMutableList(),
+            attendanceInstructionsMode = attendanceInstructionsMode,
+            attendanceInstructionsTitle = attendanceInstructionsTitle,
+            attendanceInstructionsContent = attendanceInstructionsContent,
+        )
+}
 
 data class EntityBatchRequest<T>(
     val items: List<T> = emptyList(),

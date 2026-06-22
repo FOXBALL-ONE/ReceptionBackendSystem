@@ -4,4 +4,6 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.Car
 
 interface CarService : ActivityEntityService<Car, Int> {
     fun findByActivityIdAndCarNumber(activityId: Long, carNumber: Long): Car?
+
+    fun saveByActivity(activityId: Long, cars: List<Car>): List<Car>
 }

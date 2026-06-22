@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityCarNumberRequest
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
+import top.foxball.receptionbackendsystem.controller.request.CarSaveRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
@@ -23,6 +24,38 @@ class CarController(
     private val carService: CarService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: CarSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val cars = carService.saveByActivity(activityId, request.cars)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val carNumber: Long?,
+            val carPlate: String?,
+            val driver: String?,
+            val driverNumber: String?,
+            val passengersOnBoardList: List<PassengersOnBoardItem>,
+            val passengersList: List<Person>,
+        )
+
+        val rs = cars.map { car ->
+            Response(
+                id = car.id,
+                activityId = car.activity?.id,
+                carNumber = car.carNumber,
+                carPlate = car.carPlate,
+                driver = car.driver,
+                driverNumber = car.driverNumber,
+                passengersOnBoardList = car.passengersOnBoardList,
+                passengersList = car.passengersList,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Car): ResponseEntity<ApiResponse> {
         val car = carService.saveOne(entity)

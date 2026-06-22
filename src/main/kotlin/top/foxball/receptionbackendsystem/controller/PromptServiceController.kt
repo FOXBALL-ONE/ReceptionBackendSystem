@@ -9,6 +9,7 @@ import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
+import top.foxball.receptionbackendsystem.controller.request.PromptServiceSaveRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.NoteItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
 import top.foxball.receptionbackendsystem.datasource.jdbc.StaffItem
@@ -23,6 +24,36 @@ class PromptServiceController(
     private val promptServiceService: PromptServiceService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: PromptServiceSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val promptService = promptServiceService.saveByActivity(activityId, request.toEntity())
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val staffList: List<StaffItem>,
+            val noteList: List<NoteItem>,
+            val weatherList: List<WeatherItem>,
+            val attendanceInstructionsMode: Boolean?,
+            val attendanceInstructionsTitle: String?,
+            val attendanceInstructionsContent: String?,
+        )
+
+        val rs = Response(
+            id = promptService.id,
+            activityId = promptService.activity?.id,
+            staffList = promptService.staffList,
+            noteList = promptService.noteList,
+            weatherList = promptService.weatherList,
+            attendanceInstructionsMode = promptService.attendanceInstructionsMode,
+            attendanceInstructionsTitle = promptService.attendanceInstructionsTitle,
+            attendanceInstructionsContent = promptService.attendanceInstructionsContent,
+        )
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: PromptService): ResponseEntity<ApiResponse> {
         val promptService = promptServiceService.saveOne(entity)
