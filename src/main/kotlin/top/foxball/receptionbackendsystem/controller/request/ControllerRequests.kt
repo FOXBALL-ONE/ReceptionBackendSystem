@@ -1,6 +1,10 @@
 package top.foxball.receptionbackendsystem.controller.request
 
+import top.foxball.receptionbackendsystem.datasource.jdbc.Person
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
+import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 
 data class IntIdRequest(
     val id: Int? = null,
@@ -52,6 +56,22 @@ data class ScheduleTagsRequest(
 data class ScheduleSaveRequest(
     val activityId: Long? = null,
     val schedules: List<Schedule> = emptyList(),
+)
+
+data class PersonSaveRequest(
+    val activityId: Long? = null,
+    val persons: List<Person> = emptyList(),
+)
+
+data class MealSaveRequest(
+    val activityId: Long? = null,
+    val meals: List<Meal> = emptyList(),
+)
+
+data class LodgingSaveRequest(
+    val activityId: Long? = null,
+    val colorTags: List<ColorTag> = emptyList(),
+    val lodgings: List<Lodging> = emptyList(),
 )
 
 data class EntityBatchRequest<T>(

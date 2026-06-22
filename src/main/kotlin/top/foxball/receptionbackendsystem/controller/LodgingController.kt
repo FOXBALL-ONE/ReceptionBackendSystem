@@ -9,6 +9,7 @@ import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
+import top.foxball.receptionbackendsystem.controller.request.LodgingSaveRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
@@ -22,6 +23,56 @@ class LodgingController(
     private val lodgingService: LodgingService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: LodgingSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val result = lodgingService.saveByActivity(activityId, request.colorTags, request.lodgings)
+
+        data class ColorTagResponse(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val color: String?,
+        )
+
+        data class LodgingResponse(
+            val id: Int?,
+            val activityId: Long?,
+            val roomNumber: String?,
+            val person: Person?,
+            val colorTag: ColorTag?,
+            val hostedColorsTag: ColorTag?,
+        )
+
+        data class Response(
+            val colorTags: List<ColorTagResponse>,
+            val lodgings: List<LodgingResponse>,
+        )
+
+        val rs = Response(
+            colorTags = result.colorTags.map { colorTag ->
+                ColorTagResponse(
+                    id = colorTag.id,
+                    activityId = colorTag.activity?.id,
+                    name = colorTag.name,
+                    color = colorTag.color,
+                )
+            },
+            lodgings = result.lodgings.map { lodging ->
+                LodgingResponse(
+                    id = lodging.id,
+                    activityId = lodging.activity?.id,
+                    roomNumber = lodging.roomNumber,
+                    person = lodging.person,
+                    colorTag = lodging.colorTag,
+                    hostedColorsTag = lodging.hostedColorsTag,
+                )
+            },
+        )
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Lodging): ResponseEntity<ApiResponse> {
         val lodging = lodgingService.saveOne(entity)

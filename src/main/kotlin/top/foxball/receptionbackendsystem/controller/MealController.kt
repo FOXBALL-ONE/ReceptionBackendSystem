@@ -9,6 +9,7 @@ import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
+import top.foxball.receptionbackendsystem.controller.request.MealSaveRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
 import top.foxball.receptionbackendsystem.service.MealService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
@@ -21,6 +22,34 @@ class MealController(
     private val mealService: MealService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: MealSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val meals = mealService.saveByActivity(activityId, request.meals)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val description: String?,
+            val position: String?,
+            val time: LocalDateTime?,
+        )
+
+        val rs = meals.map { meal ->
+            Response(
+                id = meal.id,
+                activityId = meal.activity?.id,
+                name = meal.name,
+                description = meal.description,
+                position = meal.position,
+                time = meal.time,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Meal): ResponseEntity<ApiResponse> {
         val meal = mealService.saveOne(entity)

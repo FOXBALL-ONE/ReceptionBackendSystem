@@ -11,6 +11,7 @@ import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
 import top.foxball.receptionbackendsystem.controller.request.NameRequest
+import top.foxball.receptionbackendsystem.controller.request.PersonSaveRequest
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
 import top.foxball.receptionbackendsystem.service.PersonService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
@@ -22,6 +23,34 @@ class PersonController(
     private val personService: PersonService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save")
+    fun saveByActivity(@RequestBody request: PersonSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val persons = personService.saveByActivity(activityId, request.persons)
+
+        data class Response(
+            val id: Int?,
+            val activityId: Long?,
+            val name: String?,
+            val unit: String?,
+            val nickName: String?,
+            val inspectionTeamItemId: Long?,
+        )
+
+        val rs = persons.map { person ->
+            Response(
+                id = person.id,
+                activityId = person.activity?.id,
+                name = person.name,
+                unit = person.unit,
+                nickName = person.nickName,
+                inspectionTeamItemId = person.inspectionTeamItemId,
+            )
+        }
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Person): ResponseEntity<ApiResponse> {
         val person = personService.saveOne(entity)
