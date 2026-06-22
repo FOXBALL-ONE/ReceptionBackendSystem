@@ -1,0 +1,5 @@
+package top.foxball.receptionbackendsystem.service
+
+import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
+
+interface OverviewOfTheCityAndCountyService : ActivityEntityService<OverviewOfTheCityAndCounty, Int>
