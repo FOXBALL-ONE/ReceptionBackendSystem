@@ -580,7 +580,7 @@ class MockDataInitializer(
         .atTime(hour, minute)
 
     private companion object {
-        const val MOCK_ACTIVITY_URL = "/activities/2026-summer-reception"
+        const val MOCK_ACTIVITY_URL = "2026-summer-reception"
         const val MOCK_IMAGE_USAGE_TYPE = "mock"
 
         val MOCK_START_DATE: LocalDate = LocalDate.of(2026, 6, 18)

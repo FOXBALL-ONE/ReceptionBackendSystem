@@ -69,6 +69,24 @@ class PersonServiceImpl(
         personRepository.deleteById(id)
     }
 
+    /** 批量保存人员，先删除活动下的旧人员，再批量插入新人员。 */
+    override fun batchSave(activityId: Int, persons: List<Person>): List<Person> {
+        val activity = findActivity(activityId)
+
+        // 删除该活动下的所有旧人员
+        val oldPersons = personRepository.findByActivityId(activityId)
+        personRepository.deleteAll(oldPersons)
+
+        // 批量插入新人员
+        val newPersons = persons.map { person ->
+            person.id = null
+            person.activity = activity
+            person
+        }
+
+        return personRepository.saveAll(newPersons)
+    }
+
     /** 查询人员所属活动。 */
     private fun findActivity(activityId: Int): Activities = activitiesRepository.findById(activityId)
         .orElseThrow { ResourceNotFoundException("活动不存在：$activityId") }

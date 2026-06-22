@@ -66,6 +66,24 @@ class CarServiceImpl(
         carRepository.deleteById(id)
     }
 
+    /** 批量保存车辆，先删除活动下的旧车辆，再批量插入新车辆。 */
+    override fun batchSave(activityId: Int, cars: List<Car>): List<Car> {
+        val activity = findActivity(activityId)
+
+        // 删除该活动下的所有旧车辆
+        val oldCars = carRepository.findByActivityId(activityId)
+        carRepository.deleteAll(oldCars)
+
+        // 批量插入新车辆
+        val newCars = cars.map { car ->
+            car.id = null
+            car.activity = activity
+            car
+        }
+
+        return carRepository.saveAll(newCars)
+    }
+
     /** 查询车辆所属活动。 */
     private fun findActivity(activityId: Int): Activities = activitiesRepository.findById(activityId)
         .orElseThrow { ResourceNotFoundException("活动不存在：$activityId") }

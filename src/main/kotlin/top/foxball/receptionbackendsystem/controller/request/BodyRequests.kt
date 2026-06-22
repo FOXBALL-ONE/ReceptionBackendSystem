@@ -188,3 +188,59 @@ data class UpdateScheduleRequest(
     val id: Long = 0,
     val schedule: Schedule = Schedule(),
 )
+
+/**
+ * 活动搜索请求体。
+ */
+data class SearchActivitiesRequest(
+    val keyword: String? = null,
+    val status: String? = null,
+)
+
+/**
+ * 二维码生成请求体。
+ */
+data class QrcodeRequest(
+    val id: Int = 0,
+    val size: Int = 256,
+)
+
+/**
+ * 批量删除请求体。
+ */
+data class BatchDeleteRequest(
+    val ids: List<Int> = emptyList(),
+)
+
+/**
+ * 活动复制请求体。
+ */
+data class DuplicateActivityRequest(
+    val id: Int = 0,
+    val newUrl: String = "",
+    val newName: String? = null,
+)
+
+/**
+ * 日程批量保存请求体。
+ */
+data class BatchSaveSchedulesRequest(
+    val activityId: Int = 0,
+    val schedules: List<Schedule> = emptyList(),
+)
+
+/**
+ * 人员批量保存请求体。
+ */
+data class BatchSavePersonsRequest(
+    val activityId: Int = 0,
+    val persons: List<Person> = emptyList(),
+)
+
+/**
+ * 车辆批量保存请求体。
+ */
+data class BatchSaveCarsRequest(
+    val activityId: Int = 0,
+    val cars: List<Car> = emptyList(),
+)

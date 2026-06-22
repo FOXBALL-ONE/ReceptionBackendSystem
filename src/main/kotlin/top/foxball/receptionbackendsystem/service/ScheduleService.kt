@@ -26,4 +26,7 @@ interface ScheduleService {
 
     /** 删除指定日程。 */
     fun delete(id: Long)
+
+    /** 批量保存日程，先删除活动下的旧日程，再批量插入新日程。 */
+    fun batchSave(activityId: Int, schedules: List<Schedule>): List<Schedule>
 }

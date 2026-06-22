@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.ActivityUnitRequest
+import top.foxball.receptionbackendsystem.controller.request.BatchSavePersonsRequest
 import top.foxball.receptionbackendsystem.controller.request.CreatePersonRequest
 import top.foxball.receptionbackendsystem.controller.request.EmptyRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
@@ -67,6 +68,11 @@ class PersonController(
         personService.delete(request.id)
         return ok(mapOf("id" to request.id), "人员删除成功")
     }
+
+    /** 批量保存人员。 */
+    @PostMapping("/save")
+    fun batchSave(@RequestBody request: BatchSavePersonsRequest): ResponseEntity<Response> =
+        ok(personService.batchSave(request.activityId, request.persons), "保存成功")
 
     /** 使用统一响应结构返回成功结果。 */
     private fun ok(data: Any?, message: String = "OK"): ResponseEntity<Response> =

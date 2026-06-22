@@ -26,4 +26,22 @@ interface ActivitiesService {
 
     /** 删除指定活动。 */
     fun delete(id: Int)
+
+    /** 关闭活动。 */
+    fun closeActivity(id: Int): Activities
+
+    /** 开放活动。 */
+    fun openActivity(id: Int): Activities
+
+    /** 搜索活动。 */
+    fun searchActivities(keyword: String?, status: String?): List<Activities>
+
+    /** 获取活动统计信息。 */
+    fun getStatistics(): Map<String, Any>
+
+    /** 批量删除活动。 */
+    fun batchDelete(ids: List<Int>): Map<String, Any>
+
+    /** 复制活动。 */
+    fun duplicateActivity(id: Int, newUrl: String, newName: String?): Activities
 }

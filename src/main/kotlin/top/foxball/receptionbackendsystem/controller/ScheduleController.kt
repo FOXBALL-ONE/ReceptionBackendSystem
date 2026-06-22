@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
+import top.foxball.receptionbackendsystem.controller.request.BatchSaveSchedulesRequest
 import top.foxball.receptionbackendsystem.controller.request.CreateScheduleRequest
 import top.foxball.receptionbackendsystem.controller.request.EmptyRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
@@ -61,6 +62,11 @@ class ScheduleController(
         scheduleService.delete(request.id)
         return ok(mapOf("id" to request.id), "日程删除成功")
     }
+
+    /** 批量保存日程。 */
+    @PostMapping("/save")
+    fun batchSave(@RequestBody request: BatchSaveSchedulesRequest): ResponseEntity<Response> =
+        ok(scheduleService.batchSave(request.activityId, request.schedules), "保存成功")
 
     /** 使用统一响应结构返回成功结果。 */
     private fun ok(data: Any?, message: String = "OK"): ResponseEntity<Response> =

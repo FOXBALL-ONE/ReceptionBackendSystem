@@ -26,4 +26,7 @@ interface CarService {
 
     /** 删除指定车辆。 */
     fun delete(id: Int)
+
+    /** 批量保存车辆，先删除活动下的旧车辆，再批量插入新车辆。 */
+    fun batchSave(activityId: Int, cars: List<Car>): List<Car>
 }

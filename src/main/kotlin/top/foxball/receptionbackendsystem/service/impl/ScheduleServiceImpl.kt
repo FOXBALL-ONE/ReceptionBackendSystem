@@ -65,6 +65,30 @@ class ScheduleServiceImpl(
         scheduleRepository.deleteById(id)
     }
 
+    /** 批量保存日程，先删除活动下的旧日程，再批量插入新日程。 */
+    override fun batchSave(activityId: Int, schedules: List<Schedule>): List<Schedule> {
+        val activity = findActivity(activityId)
+
+        // 删除该活动下的所有旧日程
+        val oldSchedules = scheduleRepository.findByActivityId(activityId)
+        scheduleRepository.deleteAll(oldSchedules)
+
+        // 批量插入新日程
+        val newSchedules = schedules.map { schedule ->
+            schedule.id = null
+            schedule.activity = activity
+
+            // 绑定考察组到活动
+            schedule.inspectionTeamItem.forEach { team ->
+                team.activity = activity
+            }
+
+            schedule
+        }
+
+        return scheduleRepository.saveAll(newSchedules)
+    }
+
     /** 查询日程所属活动。 */
     private fun findActivity(activityId: Int): Activities = activitiesRepository.findById(activityId)
         .orElseThrow { ResourceNotFoundException("活动不存在：$activityId") }

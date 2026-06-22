@@ -29,4 +29,7 @@ interface PersonService {
 
     /** 删除指定人员。 */
     fun delete(id: Int)
+
+    /** 批量保存人员，先删除活动下的旧人员，再批量插入新人员。 */
+    fun batchSave(activityId: Int, persons: List<Person>): List<Person>
 }
