@@ -46,7 +46,8 @@ class OverviewOfTheCityAndCountyController(
 
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<OverviewOfTheCityAndCounty>): ResponseEntity<ApiResponse> {
-        val overviews = overviewService.saveBatch(request.items)
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val overviews = overviewService.saveByActivity(activityId, request.items)
 
         data class Response(
             val id: Int?,

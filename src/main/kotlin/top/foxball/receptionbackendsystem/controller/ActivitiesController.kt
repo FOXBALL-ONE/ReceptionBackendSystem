@@ -5,28 +5,12 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
-import top.foxball.receptionbackendsystem.controller.request.ActivityOpenRequest
-import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
-import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
-import top.foxball.receptionbackendsystem.controller.request.LongIdsRequest
-import top.foxball.receptionbackendsystem.controller.request.UrlRequest
-import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
-import top.foxball.receptionbackendsystem.datasource.jdbc.Car
-import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
-import top.foxball.receptionbackendsystem.datasource.jdbc.Image
-import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
-import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
-import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
-import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
-import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
-import top.foxball.receptionbackendsystem.datasource.jdbc.Person
-import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
-import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+import top.foxball.receptionbackendsystem.controller.request.*
+import top.foxball.receptionbackendsystem.datasource.jdbc.*
 import top.foxball.receptionbackendsystem.service.ActivitiesService
-import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 import java.time.LocalDateTime
+import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 
 @RestController
 @RequestMapping("/api/activities")

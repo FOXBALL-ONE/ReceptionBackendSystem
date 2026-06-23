@@ -78,13 +78,14 @@ class SiteApiController(
             .associate { it.id to it.name }
 
         return personService.findByActivityId(activityId).map { person ->
+            val colorTag = person.colorTag
             SitePersonResponse(
-                type = person.colorTag?.name ?: "People",
+                type = colorTag?.name ?: "People",
                 name = person.name,
                 unit = person.unit,
                 group = person.inspectionTeamItemId?.let(teamNames::get),
                 avatar = null,
-                typeColor = person.colorTag?.color,
+                typeColor = colorTag?.color,
             )
         }
     }
@@ -133,9 +134,10 @@ class SiteApiController(
     ): List<SiteHotelResponse> {
         val activityId = resolveActivity(activityUrl).requiredId()
         return lodgingService.findByActivityId(activityId).map { lodging ->
+            val colorTag = lodging.colorTag
             SiteHotelResponse(
-                type = lodging.colorTag?.name ?: "Lodging",
-                typeColor = lodging.colorTag?.color,
+                type = colorTag?.name ?: "Lodging",
+                typeColor = colorTag?.color,
                 name = lodging.person?.displayName(),
                 unit = lodging.person?.unit,
                 room = lodging.roomNumber,

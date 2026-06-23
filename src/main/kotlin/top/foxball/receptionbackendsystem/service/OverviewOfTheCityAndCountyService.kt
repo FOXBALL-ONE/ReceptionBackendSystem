@@ -2,4 +2,9 @@ package top.foxball.receptionbackendsystem.service
 
 import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
 
-interface OverviewOfTheCityAndCountyService : ActivityEntityService<OverviewOfTheCityAndCounty, Int>
+interface OverviewOfTheCityAndCountyService : ActivityEntityService<OverviewOfTheCityAndCounty, Int> {
+    fun saveByActivity(
+        activityId: Long,
+        overviews: List<OverviewOfTheCityAndCounty>,
+    ): List<OverviewOfTheCityAndCounty>
+}

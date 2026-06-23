@@ -431,6 +431,11 @@ const D = {}, loaded = new Set();
 const TAB_KEY = { schedule:'schedule', people:'people', vehicle:'vehicles', meal:'meals', hotel:'hotel', sites:'sites', service:'service', overview:'overview' };
 let cur = 'schedule', selDay = 0, selGrp = 0, selPType = null, selHType = '全部';
 
+function safeHexColor(v, fallback = 'var(--blue-grad-hd)') {
+  const c = String(v || '').trim();
+  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(c) ? c : fallback;
+}
+
 // ── TAB SWITCH ──
 function sw(tab, el) {
   if (tab === cur && el) return;
@@ -561,7 +566,9 @@ function rPeople(data) {
 
   const typeOrd = [], typeGrp = {}, clr = {};
   people.forEach(p => {
-    if (!typeGrp[p.type]) { typeGrp[p.type]=[]; typeOrd.push(p.type); clr[p.type]=p.typeColor||'#b91c1c'; }
+    const c = safeHexColor(p.typeColor, '');
+    if (!typeGrp[p.type]) { typeGrp[p.type]=[]; typeOrd.push(p.type); clr[p.type]=c || 'var(--blue-grad-hd)'; }
+    else if (c && clr[p.type] === 'var(--blue-grad-hd)') clr[p.type] = c;
     typeGrp[p.type].push(p);
   });
   const groups = ['全部', ...new Set(people.map(p=>p.group).filter(Boolean))];
@@ -573,7 +580,7 @@ function rPeople(data) {
     <div style="position:relative;margin-bottom:12px"><input id="pSearch" type="search" placeholder="搜索姓名…" style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--bd);border-radius:20px;font-size:17px;font-family:inherit;outline:none;background:#fff" oninput="filterP(this.value)"><svg viewBox="0 0 512 512" class="ic" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px;pointer-events:none" fill="currentColor"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></div>
     ${sections.map(s=>`
       <div class="type-group">
-        <div class="type-hd" style="background:var(--blue-grad-hd)"><span>${s.type}</span></div>
+        <div class="type-hd" style="background:${s.color}"><span>${s.type}</span></div>
         ${s.list.map((p,i)=>`
           <div class="p-row">
             ${p.avatar ? `<img class="p-img" src="${p.avatar}" alt="${p.name}">` : ""}
@@ -679,13 +686,18 @@ function rHotel(data) {
   };
 
   const ord=[], grp={}, clr={};
-  hotel.forEach(h=>{ if(!grp[h.type]){grp[h.type]=[];ord.push(h.type);clr[h.type]=h.typeColor||'#b91c1c';} grp[h.type].push(h); });
+  hotel.forEach(h=>{
+    const c = safeHexColor(h.typeColor, '');
+    if(!grp[h.type]){grp[h.type]=[];ord.push(h.type);clr[h.type]=c || 'var(--blue-grad-hd)';}
+    else if (c && clr[h.type] === 'var(--blue-grad-hd)') clr[h.type] = c;
+    grp[h.type].push(h);
+  });
   const total = hotel.length;
   return `
     <div style="position:relative;margin-bottom:12px"><input type="search" placeholder="搜索姓名或房号…" style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--bd);border-radius:20px;font-size:15px;font-family:inherit;outline:none;background:#fff" oninput="filterH(this.value)"><svg viewBox="0 0 512 512" class="ic" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aaa;font-size:14px;pointer-events:none" fill="currentColor"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></div>
     ${ord.map(t=>`
       <div class="type-group">
-        <div class="type-hd" style="background:var(--blue-grad-hd)"><span>${t}</span></div>
+        <div class="type-hd" style="background:${clr[t]}"><span>${t}</span></div>
         ${grp[t].map(r=>`
           <div class="p-row">
             <div class="p-info">
