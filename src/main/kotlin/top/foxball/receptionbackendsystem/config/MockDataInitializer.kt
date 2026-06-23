@@ -54,10 +54,12 @@ class MockDataInitializer(
             isOpen = true,
         )
 
-        val blueTag = ColorTag(activity = activity, name = "综合协调组", color = "#2563EB")
-        val greenTag = ColorTag(activity = activity, name = "现场保障组", color = "#16A34A")
-        val amberTag = ColorTag(activity = activity, name = "会务服务组", color = "#D97706")
-        activity.colorTagList.addAll(listOf(blueTag, greenTag, amberTag))
+        val personBlueTag = ColorTag(activity = activity, name = "综合协调组", color = "#2563EB", type = ColorTag.TYPE_PERSON)
+        val personGreenTag = ColorTag(activity = activity, name = "现场保障组", color = "#16A34A", type = ColorTag.TYPE_PERSON)
+        val lodgingBlueTag = ColorTag(activity = activity, name = "综合协调组", color = "#2563EB", type = ColorTag.TYPE_LODGING)
+        val lodgingGreenTag = ColorTag(activity = activity, name = "现场保障组", color = "#16A34A", type = ColorTag.TYPE_LODGING)
+        val amberTag = ColorTag(activity = activity, name = "会务服务组", color = "#D97706", type = ColorTag.TYPE_LODGING)
+        activity.colorTagList.addAll(listOf(personBlueTag, personGreenTag, lodgingBlueTag, lodgingGreenTag, amberTag))
 
         val projectTeam = InspectionTeamItem(
             activity = activity,
@@ -123,10 +125,10 @@ class MockDataInitializer(
             ),
         )
 
-        val personA = Person(activity = activity, name = "张明", unit = "省发展改革委", nickName = "张主任")
-        val personB = Person(activity = activity, name = "李娜", unit = "省工业和信息化厅", nickName = "李处长")
-        val personC = Person(activity = activity, name = "王强", unit = "市政府办公室", nickName = "王主任")
-        val personD = Person(activity = activity, name = "赵琳", unit = "市招商服务中心", nickName = "赵经理")
+        val personA = Person(activity = activity, name = "张明", unit = "省发展改革委", nickName = "张主任", colorTag = personBlueTag)
+        val personB = Person(activity = activity, name = "李娜", unit = "省工业和信息化厅", nickName = "李处长", colorTag = personBlueTag)
+        val personC = Person(activity = activity, name = "王强", unit = "市政府办公室", nickName = "王主任", colorTag = personGreenTag)
+        val personD = Person(activity = activity, name = "赵琳", unit = "市招商服务中心", nickName = "赵经理", colorTag = personGreenTag)
         activity.personList.addAll(listOf(personA, personB, personC, personD))
 
         val personSnapshotA = personA.toJsonSnapshot()
@@ -213,7 +215,7 @@ class MockDataInitializer(
                 staffList = mutableListOf(
                     StaffItem(
                         name = "综合协调组",
-                        colorTag = blueTag.color,
+                        colorTag = personBlueTag.color,
                         groupList = mutableListOf(
                             OneStaff(name = "刘洋", duty = "总协调", phone = "13900000001"),
                             OneStaff(name = "周敏", duty = "资料统筹", phone = "13900000002"),
@@ -221,7 +223,7 @@ class MockDataInitializer(
                     ),
                     StaffItem(
                         name = "现场保障组",
-                        colorTag = greenTag.color,
+                        colorTag = personGreenTag.color,
                         groupList = mutableListOf(
                             OneStaff(name = "吴昊", duty = "现场保障", phone = "13900000003"),
                         ),
@@ -229,7 +231,7 @@ class MockDataInitializer(
                 ),
                 noteList = mutableListOf(
                     NoteItem(title = "集合提醒", content = "请各组提前15分钟到达指定集合点。", colorTag = amberTag.color),
-                    NoteItem(title = "资料准备", content = "讲解材料、车辆牌号和住宿信息已同步至接待页面。", colorTag = blueTag.color),
+                    NoteItem(title = "资料准备", content = "讲解材料、车辆牌号和住宿信息已同步至接待页面。", colorTag = personBlueTag.color),
                 ),
                 weatherList = mutableListOf(
                     WeatherItem(
@@ -279,10 +281,10 @@ class MockDataInitializer(
 
         activity.hostedList.addAll(
             listOf(
-                Lodging(activity = activity, roomNumber = "1801", person = personSnapshotA, colorTag = blueTag),
-                Lodging(activity = activity, roomNumber = "1802", person = personSnapshotB, colorTag = blueTag),
-                Lodging(activity = activity, roomNumber = "1811", person = personSnapshotC, colorTag = greenTag),
-                Lodging(activity = activity, roomNumber = "1812", person = personSnapshotD, colorTag = greenTag),
+                Lodging(activity = activity, roomNumber = "1801", person = personSnapshotA, colorTag = lodgingBlueTag),
+                Lodging(activity = activity, roomNumber = "1802", person = personSnapshotB, colorTag = lodgingBlueTag),
+                Lodging(activity = activity, roomNumber = "1811", person = personSnapshotC, colorTag = lodgingGreenTag),
+                Lodging(activity = activity, roomNumber = "1812", person = personSnapshotD, colorTag = lodgingGreenTag),
             ),
         )
 

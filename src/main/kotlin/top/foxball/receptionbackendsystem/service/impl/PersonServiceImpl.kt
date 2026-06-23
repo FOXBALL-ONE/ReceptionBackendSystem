@@ -3,6 +3,7 @@ package top.foxball.receptionbackendsystem.service.impl
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
 import top.foxball.receptionbackendsystem.datasource.jdbc.PersonRepository
 import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
@@ -32,6 +33,10 @@ class PersonServiceImpl(
         val existingPersonsById = activity.personList.mapNotNull { person ->
             person.id?.let { it to person }
         }.toMap()
+        val personColorTags = activity.colorTagList.filter { it.isPersonType() }
+        val existingColorTagsById = personColorTags.mapNotNull { colorTag ->
+            colorTag.id?.let { it to colorTag }
+        }.toMap()
 
         val normalizedPersons = persons.map { person ->
             val targetPerson = person.id?.let(existingPersonsById::get) ?: Person()
@@ -39,6 +44,7 @@ class PersonServiceImpl(
             targetPerson.name = person.name
             targetPerson.unit = person.unit
             targetPerson.nickName = person.nickName
+            targetPerson.colorTag = person.colorTag?.resolveIn(existingColorTagsById, personColorTags)
             targetPerson.inspectionTeamItemId = person.inspectionTeamItemId
             targetPerson
         }
@@ -48,4 +54,15 @@ class PersonServiceImpl(
 
         return activitiesRepository.saveAndFlush(activity).personList
     }
+
+    private fun ColorTag.resolveIn(
+        colorTagsById: Map<Int, ColorTag>,
+        colorTags: List<ColorTag>,
+    ): ColorTag? =
+        id?.let(colorTagsById::get)
+            ?: name?.let { colorTagName -> colorTags.firstOrNull { it.name == colorTagName } }
+            ?: color?.let { colorValue -> colorTags.firstOrNull { it.color == colorValue } }
+
+    private fun ColorTag.isPersonType(): Boolean =
+        type.isNullOrBlank() || type.equals(ColorTag.TYPE_PERSON, ignoreCase = true)
 }

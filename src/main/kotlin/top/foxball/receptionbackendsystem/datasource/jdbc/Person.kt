@@ -1,6 +1,7 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import jakarta.json.bind.annotation.JsonbTransient
 import jakarta.persistence.*
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
@@ -37,6 +38,12 @@ data class Person(
     /** 昵称或展示名。 */
     @Column(name = "nick_name")
     var nickName: String? = null,
+
+    /** 人员颜色分组。 */
+    @JsonbTransient
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "color_tag_id")
+    var colorTag: ColorTag? = null,
 
     @Column(name = "inspection_team_item_id")
     var inspectionTeamItemId: Long? = null,

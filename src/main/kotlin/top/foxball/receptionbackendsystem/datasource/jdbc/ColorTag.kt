@@ -32,5 +32,14 @@ data class ColorTag(
 
     /** 标签颜色值，通常为十六进制颜色或前端约定的颜色标识。 */
     @Column(name = "color")
-    var color: String? = null
-)
+    var color: String? = null,
+
+    /** 标签用途类型，用于区分人员分类和住宿分类。 */
+    @Column(name = "type")
+    var type: String? = null,
+) {
+    companion object {
+        const val TYPE_PERSON = "PERSON"
+        const val TYPE_LODGING = "LODGING"
+    }
+}

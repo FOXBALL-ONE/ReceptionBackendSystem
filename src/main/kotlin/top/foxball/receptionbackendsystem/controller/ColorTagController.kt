@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.ActivityNameRequest
+import top.foxball.receptionbackendsystem.controller.request.ColorTagSaveRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
@@ -22,14 +23,16 @@ class ColorTagController(
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
     @PostMapping("/save-one")
-    fun saveOne(@RequestBody entity: ColorTag): ResponseEntity<ApiResponse> {
-        val colorTag = colorTagService.saveOne(entity)
+    fun saveOne(@RequestBody request: ColorTagSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val colorTag = colorTagService.saveByActivity(activityId, listOf(request.toEntity())).first()
 
         data class Response(
             val id: Int?,
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = Response(
@@ -37,6 +40,7 @@ class ColorTagController(
             activityId = colorTag.activity?.id,
             name = colorTag.name,
             color = colorTag.color,
+            type = colorTag.type,
         )
 
         return builder.ok().data(rs).build()
@@ -44,13 +48,15 @@ class ColorTagController(
 
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<ApiResponse> {
-        val colorTags = colorTagService.saveBatch(request.items)
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val colorTags = colorTagService.saveByActivity(activityId, request.items)
 
         data class Response(
             val id: Int?,
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = colorTags.map { colorTag ->
@@ -59,6 +65,7 @@ class ColorTagController(
                 activityId = colorTag.activity?.id,
                 name = colorTag.name,
                 color = colorTag.color,
+                type = colorTag.type,
             )
         }
 
@@ -66,14 +73,16 @@ class ColorTagController(
     }
 
     @PostMapping("/update-one")
-    fun updateOne(@RequestBody entity: ColorTag): ResponseEntity<ApiResponse> {
-        val colorTag = colorTagService.updateOne(entity)
+    fun updateOne(@RequestBody request: ColorTagSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val colorTag = colorTagService.saveByActivity(activityId, listOf(request.toEntity())).first()
 
         data class Response(
             val id: Int?,
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = Response(
@@ -81,6 +90,7 @@ class ColorTagController(
             activityId = colorTag.activity?.id,
             name = colorTag.name,
             color = colorTag.color,
+            type = colorTag.type,
         )
 
         return builder.ok().data(rs).build()
@@ -88,13 +98,15 @@ class ColorTagController(
 
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<ApiResponse> {
-        val colorTags = colorTagService.updateBatch(request.items)
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val colorTags = colorTagService.saveByActivity(activityId, request.items)
 
         data class Response(
             val id: Int?,
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = colorTags.map { colorTag ->
@@ -103,6 +115,7 @@ class ColorTagController(
                 activityId = colorTag.activity?.id,
                 name = colorTag.name,
                 color = colorTag.color,
+                type = colorTag.type,
             )
         }
 
@@ -127,6 +140,7 @@ class ColorTagController(
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = Response(
@@ -134,6 +148,7 @@ class ColorTagController(
             activityId = colorTag.activity?.id,
             name = colorTag.name,
             color = colorTag.color,
+            type = colorTag.type,
         )
 
         return builder.ok().data(rs).build()
@@ -142,13 +157,17 @@ class ColorTagController(
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
-        val colorTags = colorTagService.findByActivityId(activityId)
+        val colorTags = request.type
+            ?.takeIf { it.isNotBlank() }
+            ?.let { colorTagService.findByActivityIdAndType(activityId, it) }
+            ?: colorTagService.findByActivityId(activityId)
 
         data class Response(
             val id: Int?,
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = colorTags.map { colorTag ->
@@ -157,6 +176,7 @@ class ColorTagController(
                 activityId = colorTag.activity?.id,
                 name = colorTag.name,
                 color = colorTag.color,
+                type = colorTag.type,
             )
         }
 
@@ -167,13 +187,17 @@ class ColorTagController(
     fun findByName(@RequestBody request: ActivityNameRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val name = request.name?.takeIf { it.isNotBlank() } ?: return badRequest("name is required")
-        val colorTag = colorTagService.findByActivityIdAndName(activityId, name)
+        val colorTag = request.type
+            ?.takeIf { it.isNotBlank() }
+            ?.let { colorTagService.findByActivityIdAndNameAndType(activityId, name, it) }
+            ?: colorTagService.findByActivityIdAndName(activityId, name)
 
         data class Response(
             val id: Int?,
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         val rs = colorTag?.let {
@@ -182,6 +206,7 @@ class ColorTagController(
                 activityId = it.activity?.id,
                 name = it.name,
                 color = it.color,
+                type = it.type,
             )
         }
 
@@ -192,6 +217,10 @@ class ColorTagController(
     fun existsByName(@RequestBody request: ActivityNameRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val name = request.name?.takeIf { it.isNotBlank() } ?: return badRequest("name is required")
-        return ok(colorTagService.existsByActivityIdAndName(activityId, name))
+        val exists = request.type
+            ?.takeIf { it.isNotBlank() }
+            ?.let { colorTagService.existsByActivityIdAndNameAndType(activityId, name, it) }
+            ?: colorTagService.existsByActivityIdAndName(activityId, name)
+        return ok(exists)
     }
 }

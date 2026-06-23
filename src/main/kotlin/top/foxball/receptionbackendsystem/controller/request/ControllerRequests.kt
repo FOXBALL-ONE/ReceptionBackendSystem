@@ -30,6 +30,7 @@ data class LongIdsRequest(
 
 data class ActivityIdRequest(
     val activityId: Long? = null,
+    val type: String? = null,
 )
 
 data class ActivityOpenRequest(
@@ -48,7 +49,24 @@ data class NameRequest(
 data class ActivityNameRequest(
     val activityId: Long? = null,
     val name: String? = null,
+    val type: String? = null,
 )
+
+data class ColorTagSaveRequest(
+    val activityId: Long? = null,
+    val id: Int? = null,
+    val name: String? = null,
+    val color: String? = null,
+    val type: String? = null,
+) {
+    fun toEntity(): ColorTag =
+        ColorTag(
+            id = id,
+            name = name,
+            color = color,
+            type = type,
+        )
+}
 
 data class ActivityUnitRequest(
     val activityId: Long? = null,
@@ -118,5 +136,6 @@ data class PromptServiceSaveRequest(
 }
 
 data class EntityBatchRequest<T>(
+    val activityId: Long? = null,
     val items: List<T> = emptyList(),
 )

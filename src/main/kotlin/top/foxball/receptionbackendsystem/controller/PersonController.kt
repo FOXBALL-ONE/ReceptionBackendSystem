@@ -12,6 +12,7 @@ import top.foxball.receptionbackendsystem.controller.request.IntIdRequest
 import top.foxball.receptionbackendsystem.controller.request.IntIdsRequest
 import top.foxball.receptionbackendsystem.controller.request.NameRequest
 import top.foxball.receptionbackendsystem.controller.request.PersonSaveRequest
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.Person
 import top.foxball.receptionbackendsystem.service.PersonService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
@@ -34,6 +35,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -44,6 +46,7 @@ class PersonController(
                 name = person.name,
                 unit = person.unit,
                 nickName = person.nickName,
+                colorTag = person.colorTag,
                 inspectionTeamItemId = person.inspectionTeamItemId,
             )
         }
@@ -61,6 +64,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -70,6 +74,7 @@ class PersonController(
             name = person.name,
             unit = person.unit,
             nickName = person.nickName,
+            colorTag = person.colorTag,
             inspectionTeamItemId = person.inspectionTeamItemId,
         )
 
@@ -86,6 +91,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -96,6 +102,7 @@ class PersonController(
                 name = person.name,
                 unit = person.unit,
                 nickName = person.nickName,
+                colorTag = person.colorTag,
                 inspectionTeamItemId = person.inspectionTeamItemId,
             )
         }
@@ -113,6 +120,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -122,6 +130,7 @@ class PersonController(
             name = person.name,
             unit = person.unit,
             nickName = person.nickName,
+            colorTag = person.colorTag,
             inspectionTeamItemId = person.inspectionTeamItemId,
         )
 
@@ -138,6 +147,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -148,6 +158,7 @@ class PersonController(
                 name = person.name,
                 unit = person.unit,
                 nickName = person.nickName,
+                colorTag = person.colorTag,
                 inspectionTeamItemId = person.inspectionTeamItemId,
             )
         }
@@ -174,6 +185,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -183,6 +195,7 @@ class PersonController(
             name = person.name,
             unit = person.unit,
             nickName = person.nickName,
+            colorTag = person.colorTag,
             inspectionTeamItemId = person.inspectionTeamItemId,
         )
 
@@ -200,6 +213,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -210,6 +224,7 @@ class PersonController(
                 name = person.name,
                 unit = person.unit,
                 nickName = person.nickName,
+                colorTag = person.colorTag,
                 inspectionTeamItemId = person.inspectionTeamItemId,
             )
         }
@@ -228,6 +243,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -238,6 +254,7 @@ class PersonController(
                 name = person.name,
                 unit = person.unit,
                 nickName = person.nickName,
+                colorTag = person.colorTag,
                 inspectionTeamItemId = person.inspectionTeamItemId,
             )
         }
@@ -257,6 +274,7 @@ class PersonController(
             val name: String?,
             val unit: String?,
             val nickName: String?,
+            val colorTag: ColorTag?,
             val inspectionTeamItemId: Long?,
         )
 
@@ -267,6 +285,7 @@ class PersonController(
                 name = person.name,
                 unit = person.unit,
                 nickName = person.nickName,
+                colorTag = person.colorTag,
                 inspectionTeamItemId = person.inspectionTeamItemId,
             )
         }

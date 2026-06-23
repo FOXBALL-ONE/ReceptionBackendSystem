@@ -33,6 +33,7 @@ class LodgingController(
             val activityId: Long?,
             val name: String?,
             val color: String?,
+            val type: String?,
         )
 
         data class LodgingResponse(
@@ -56,6 +57,7 @@ class LodgingController(
                     activityId = colorTag.activity?.id,
                     name = colorTag.name,
                     color = colorTag.color,
+                    type = colorTag.type,
                 )
             },
             lodgings = result.lodgings.map { lodging ->

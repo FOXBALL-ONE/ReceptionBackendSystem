@@ -29,7 +29,8 @@ class LodgingServiceImpl(
     ): LodgingSaveResult {
         val activity = activitiesRepository.findEntityById(activityId)
             ?: throw ResourceNotFoundException("activity not found")
-        val existingColorTagsById = activity.colorTagList.mapNotNull { colorTag ->
+        val preservedColorTags = activity.colorTagList.filterNot { it.isLodgingType() }
+        val existingColorTagsById = activity.colorTagList.filter { it.isLodgingType() }.mapNotNull { colorTag ->
             colorTag.id?.let { it to colorTag }
         }.toMap()
         val existingLodgingsById = activity.hostedList.mapNotNull { lodging ->
@@ -42,6 +43,7 @@ class LodgingServiceImpl(
             targetColorTag.activity = activity
             targetColorTag.name = colorTag.name
             targetColorTag.color = colorTag.color
+            targetColorTag.type = ColorTag.TYPE_LODGING
             originalToNormalizedColorTags[colorTag] = targetColorTag
             targetColorTag
         }
@@ -64,12 +66,13 @@ class LodgingServiceImpl(
 
         activity.hostedList.clear()
         activity.colorTagList.clear()
+        activity.colorTagList.addAll(preservedColorTags)
         activity.colorTagList.addAll(normalizedColorTags)
         activity.hostedList.addAll(normalizedLodgings)
 
         val savedActivity = activitiesRepository.saveAndFlush(activity)
         return LodgingSaveResult(
-            colorTags = savedActivity.colorTagList,
+            colorTags = savedActivity.colorTagList.filter { it.isLodgingType() },
             lodgings = savedActivity.hostedList,
         )
     }
@@ -83,6 +86,9 @@ class LodgingServiceImpl(
             ?: id?.let(colorTagsById::get)
             ?: name?.let { colorTagName -> colorTags.firstOrNull { it.name == colorTagName } }
             ?: color?.let { colorValue -> colorTags.firstOrNull { it.color == colorValue } }
+
+    private fun ColorTag.isLodgingType(): Boolean =
+        type.isNullOrBlank() || type.equals(ColorTag.TYPE_LODGING, ignoreCase = true)
 
     private fun Person.toJsonSnapshot(): Person =
         Person(

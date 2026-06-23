@@ -229,6 +229,7 @@ class ExcelDatabaseImportService(
             ColorTag(
                 activity = activity,
                 name = name,
+                type = ColorTag.TYPE_LODGING,
             )
         }
 

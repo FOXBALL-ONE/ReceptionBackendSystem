@@ -18,4 +18,9 @@ interface PersonRepository : ReceptionRepository<Person, Int> {
      * 查询指定活动下指定单位的人员。
      */
     fun findByActivityIdAndUnit(activityId: Long, unit: String): List<Person>
+
+    /**
+     * 查询引用指定颜色标签的人员。
+     */
+    fun findByColorTagId(colorTagId: Int): List<Person>
 }

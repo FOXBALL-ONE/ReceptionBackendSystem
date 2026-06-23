@@ -27,7 +27,7 @@ class LodgingSaveByActivityTest {
     fun `save by activity replaces lodgings and color tags`() {
         val activity = activitiesRepository.findAll().first()
         val activityId = assertNotNull(activity.id)
-        val colorTag = ColorTag(name = "接口住宿组", color = "#123456")
+        val colorTag = ColorTag(name = "接口住宿组", color = "#123456", type = ColorTag.TYPE_LODGING)
 
         val savedResult = lodgingService.saveByActivity(
             activityId = activityId,
@@ -45,6 +45,7 @@ class LodgingSaveByActivityTest {
         assertEquals(1, savedResult.lodgings.size)
         assertEquals(activityId, savedResult.colorTags.first().activity?.id)
         assertEquals("接口住宿组", savedResult.colorTags.first().name)
+        assertEquals(ColorTag.TYPE_LODGING, savedResult.colorTags.first().type)
         assertEquals(savedResult.colorTags.first().id, savedResult.lodgings.first().colorTag?.id)
         assertEquals("接口住宿人员", savedResult.lodgings.first().person?.name)
 
@@ -53,7 +54,7 @@ class LodgingSaveByActivityTest {
         val updatedResult = lodgingService.saveByActivity(
             activityId = activityId,
             colorTags = listOf(
-                ColorTag(id = colorTagId, name = "接口住宿组-更新", color = "#654321"),
+                ColorTag(id = colorTagId, name = "接口住宿组-更新", color = "#654321", type = ColorTag.TYPE_LODGING),
             ),
             lodgings = listOf(
                 Lodging(
@@ -68,6 +69,7 @@ class LodgingSaveByActivityTest {
         assertEquals(colorTagId, updatedResult.colorTags.first().id)
         assertEquals(lodgingId, updatedResult.lodgings.first().id)
         assertEquals("接口住宿组-更新", updatedResult.colorTags.first().name)
+        assertEquals(ColorTag.TYPE_LODGING, updatedResult.colorTags.first().type)
         assertEquals("T-2002", updatedResult.lodgings.first().roomNumber)
         assertEquals(colorTagId, updatedResult.lodgings.first().colorTag?.id)
 

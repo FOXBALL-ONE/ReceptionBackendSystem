@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import kotlin.test.assertTrue
 
 /**
@@ -38,6 +39,8 @@ class DataInitializerTest {
         assertTrue(activity.personList.isNotEmpty(), "应该有人员记录")
         assertTrue(activity.imageList.isNotEmpty(), "应该有图片记录")
         assertTrue(activity.colorTagList.isNotEmpty(), "应该有颜色标签记录")
+        assertTrue(activity.colorTagList.any { it.type == ColorTag.TYPE_PERSON }, "应该有人员颜色标签记录")
+        assertTrue(activity.colorTagList.any { it.type == ColorTag.TYPE_LODGING }, "应该有住宿颜色标签记录")
         assertTrue(activity.promptServiceList.isNotEmpty(), "应该有提示服务记录")
         assertTrue(activity.mealList.isNotEmpty(), "应该有用餐安排记录")
         assertTrue(activity.hostedList.isNotEmpty(), "应该有住宿安排记录")
