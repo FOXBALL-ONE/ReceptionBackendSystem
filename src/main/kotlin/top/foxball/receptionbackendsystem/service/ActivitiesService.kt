@@ -12,4 +12,6 @@ interface ActivitiesService : ReceptionService<Activities, Long> {
     fun existsByUrl(url: String): Boolean
 
     fun findOpenActivities(): List<Activities>
+
+    fun updateIsOpen(id: Long, isOpen: Boolean): Activities
 }

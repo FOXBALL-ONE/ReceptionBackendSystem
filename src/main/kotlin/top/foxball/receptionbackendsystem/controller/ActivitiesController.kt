@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
+import top.foxball.receptionbackendsystem.controller.request.ActivityOpenRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdsRequest
@@ -33,6 +34,22 @@ class ActivitiesController(
     private val activitiesService: ActivitiesService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/update-is-open")
+    fun updateIsOpen(@RequestBody request: ActivityOpenRequest): ResponseEntity<ApiResponse> {
+        val id = request.id ?: return badRequest("id is required")
+        val isOpen = request.isOpen ?: return badRequest("isOpen is required")
+        val activity = activitiesService.updateIsOpen(id, isOpen)
+
+        data class Response(
+            val id: Long?,
+            val isOpen: Boolean?,
+        )
+
+        return builder.ok()
+            .data(Response(id = activity.id, isOpen = activity.isOpen))
+            .build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Activities): ResponseEntity<ApiResponse> {
         val activity = activitiesService.saveOne(entity)

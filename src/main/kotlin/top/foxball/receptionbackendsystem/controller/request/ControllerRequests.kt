@@ -32,6 +32,11 @@ data class ActivityIdRequest(
     val activityId: Long? = null,
 )
 
+data class ActivityOpenRequest(
+    val id: Long? = null,
+    val isOpen: Boolean? = null,
+)
+
 data class UrlRequest(
     val url: String? = null,
 )

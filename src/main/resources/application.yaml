@@ -55,7 +55,7 @@ spring:
 
 
 image:
-    storage: ./images
+    storage: D:\1
     base-url: http://localhost:8080/images
 
 logging:
