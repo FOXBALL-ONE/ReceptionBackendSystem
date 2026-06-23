@@ -21,6 +21,8 @@ management:
           - refresh
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: ReceptionBackendSystem
   security:
@@ -32,13 +34,13 @@ spring:
       max-file-size: 4096MB
       max-request-size: 4096MB
   datasource:
-    url: jdbc:postgresql://hz.doh.ink:5432/Reception
-    username: backend
-    password: hSxcEnNjDDFxppms
-    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: ${DB_DRIVER_CLASS_NAME:org.postgresql.Driver}
     hikari:
-      maximum-pool-size: 10
-      connection-timeout: 2000
+      maximum-pool-size: ${DB_HIKARI_MAXIMUM_POOL_SIZE:10}
+      connection-timeout: ${DB_HIKARI_CONNECTION_TIMEOUT:2000}
 
   jpa:
     hibernate:

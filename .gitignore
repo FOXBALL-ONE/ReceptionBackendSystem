@@ -39,3 +39,8 @@ out/
 ### Kotlin ###
 .kotlin
 /logs/app.log
+
+### Environment ###
+.env
+.env.*
+!.env.example
