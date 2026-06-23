@@ -6,15 +6,15 @@
 <title>数字接待系统</title>
 <style>
 :root {
-  /* 主色：渐变红 */
-  --red:        #b91c1c;
-  --red-dk:     #7f1d1d;
-  --red-lt:     #fef2f2;
-  --red-md:     #fecaca;
-  --blue-grad:  linear-gradient(135deg, #f87171 0%, #b91c1c 100%);
-  --blue-grad-hd: linear-gradient(90deg, #991b1b 0%, #ef4444 100%);  /* 标题渐变：左深右浅 */
-  --blue-grad-lt: linear-gradient(135deg, #dc2626 0%, #7f1d1d 100%);  /* 深红渐变（未点击图标，清晰无雾感）*/
-  --blue-grad-dk: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+  /* 主色：渐变蓝 */
+  --red:        #2563eb;             /* legacy name kept, value = blue */
+  --red-dk:     #1e40af;
+  --red-lt:     #eff6ff;
+  --red-md:     #bfdbfe;
+  --blue-grad:  linear-gradient(135deg, #60a5fa 0%, #1e40af 100%);
+  --blue-grad-hd: linear-gradient(90deg, #1e40af 0%, #60a5fa 100%);  /* 标题渐变：左深右浅 */
+  --blue-grad-lt: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);  /* 深蓝渐变（未点击图标，清晰无雾感）*/
+  --blue-grad-dk: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
   --gold-grad:  linear-gradient(180deg, #FFF8B4 0%, #FFE780 50%, #FFDA56 100%);  /* 浅奶油黄→亮金→暖金，全程明亮 */
   --gold:       #facc15;
   --bg:     #f5f5f5;
@@ -72,7 +72,7 @@ body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:var(--bg);co
   position: relative;
   z-index: 10;
   border-radius: 18px;
-  box-shadow: 0 6px 20px rgba(185,28,28,.25);
+  box-shadow: 0 6px 20px rgba(30,64,175,.25);
   padding: 16px 12px;
 }
 .nav-cell {
@@ -84,7 +84,7 @@ body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:var(--bg);co
   cursor: pointer;
   border-radius: 12px;
   border: none;
-  background: #fee2e2;
+  background: #94D8FB;
   transition: all .2s;
   -webkit-user-select: none;
   user-select: none;
@@ -137,22 +137,22 @@ body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:var(--bg);co
 .content{padding:16px 14px 80px;min-height:300px;}
 
 /* ── SCHEDULE ── */
-.date-badge{display:inline-block;background:var(--blue-grad);color:#fff;font-size:16px;font-weight:700;padding:6px 20px;border-radius:20px;margin-bottom:12px;letter-spacing:.04em;box-shadow:0 2px 8px rgba(185,28,28,.3);} /* 字体放大 */
+.date-badge{display:inline-block;background:var(--blue-grad);color:#fff;font-size:16px;font-weight:700;padding:6px 20px;border-radius:20px;margin-bottom:12px;letter-spacing:.04em;box-shadow:0 2px 8px rgba(37,99,235,.3);} /* 字体放大 */
 .group-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;justify-content:center;}
-.gpill{padding:6px 18px;border-radius:20px;font-size:17px;font-weight:600;border:none;background:var(--blue-grad);color:#fff;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(185,28,28,.25);}
+.gpill{padding:6px 18px;border-radius:20px;font-size:17px;font-weight:600;border:none;background:var(--blue-grad);color:#fff;cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(37,99,235,.25);}
 .gpill:active{transform:scale(.95);}
 .gpill.on{background:linear-gradient(180deg, #FFF8B4 0%, #FFE780 50%, #FFDA56 100%);color:var(--red-dk);font-weight:700;box-shadow:0 3px 10px rgba(250,204,21,.6);}
-.route-flow{font-size:17px;color:var(--text2);line-height:1.8;padding:12px 14px;background:linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);border-radius:var(--r2);border-left:3px solid transparent;border-image:var(--blue-grad) 1;margin-bottom:14px;box-shadow:0 2px 8px rgba(185,28,28,.1);} /* 字体放大 */
+.route-flow{font-size:17px;color:var(--text2);line-height:1.8;padding:12px 14px;background:linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);border-radius:var(--r2);border-left:3px solid transparent;border-image:var(--blue-grad) 1;margin-bottom:14px;box-shadow:0 2px 8px rgba(37,99,235,.1);} /* 字体放大 */
 .route-node{display:inline;}
 .route-arr{color:var(--red-dk);margin:0 3px;font-size:13px;}
 .meeting-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.meeting-hd-line{flex:1;height:1px;background:linear-gradient(90deg, transparent 0%, #dc2626 50%, transparent 100%);}
+.meeting-hd-line{flex:1;height:1px;background:linear-gradient(90deg, transparent 0%, #3b82f6 50%, transparent 100%);}
 .meeting-hd-txt{font-size:15px;font-weight:700;background:var(--blue-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;white-space:nowrap;letter-spacing:.04em;} /* 字体放大 */
 .tl{display:flex;flex-direction:column;gap:0;}
 .tl-item{display:flex;gap:10px;position:relative;}
-.tl-item:not(:last-child)::after{content:'';position:absolute;left:19px;top:34px;bottom:0;width:2px;background:linear-gradient(180deg, #dc2626 0%, #fecaca 100%);}
-.tl-dot-wrap{flex-shrink:0;width:38px;height:38px;background:#fff;border:2.5px solid #b91c1c;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:2px;z-index:1;box-shadow:0 2px 6px rgba(185,28,28,.18);}
-.tl-dot-wrap i,.tl-dot-wrap svg{font-size:16px;color:#b91c1c;}
+.tl-item:not(:last-child)::after{content:'';position:absolute;left:19px;top:34px;bottom:0;width:2px;background:linear-gradient(180deg, #3b82f6 0%, #93c5fd 100%);}
+.tl-dot-wrap{flex-shrink:0;width:38px;height:38px;background:#fff;border:2.5px solid #2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:2px;z-index:1;box-shadow:0 2px 6px rgba(37,99,235,.18);}
+.tl-dot-wrap i,.tl-dot-wrap svg{font-size:16px;color:#2563eb;}
 .tl-body{flex:1;padding:6px 0 16px;}
 .tl-time{font-size:18px;font-weight:700;color:var(--red);margin-bottom:2px;} /* 字体放大 */
 .tl-content{font-size:20px;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.45;} /* 字体放大 */
@@ -336,12 +336,12 @@ body{font-family:-apple-system,'Noto Sans SC',sans-serif;background:var(--bg);co
 <svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
   <defs>
     <linearGradient id="navGradLt" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#dc2626"/>
-      <stop offset="100%" stop-color="#7f1d1d"/>
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
     </linearGradient>
     <linearGradient id="navGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f87171"/>
-      <stop offset="100%" stop-color="#b91c1c"/>
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#1e40af"/>
     </linearGradient>
   </defs>
 </svg>
@@ -431,11 +431,6 @@ const D = {}, loaded = new Set();
 const TAB_KEY = { schedule:'schedule', people:'people', vehicle:'vehicles', meal:'meals', hotel:'hotel', sites:'sites', service:'service', overview:'overview' };
 let cur = 'schedule', selDay = 0, selGrp = 0, selPType = null, selHType = '全部';
 
-function safeHexColor(v, fallback = '#b91c1c') {
-  const c = String(v || '').trim();
-  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(c) ? c : fallback;
-}
-
 // ── TAB SWITCH ──
 function sw(tab, el) {
   if (tab === cur && el) return;
@@ -495,7 +490,7 @@ function rSched(data) {
     <div style="margin-bottom:14px;display:flex;justify-content:center">
       ${days.length > 1 ? days.map((d,i) => `
         <span onclick="pickDay(${i})" style="margin:0 4px;padding:6px 18px;border-radius:20px;font-size:17px;font-weight:700;cursor:pointer;transition:all .15s;border:none;
-          ${i===selDay ? 'background:linear-gradient(180deg, #FFF8B4 0%, #FFE780 50%, #FFDA56 100%);color:var(--red-dk);box-shadow:0 3px 10px rgba(250,204,21,.6)' : 'background:var(--blue-grad);color:#fff;box-shadow:0 2px 8px rgba(185,28,28,.25)'}">${d.date}</span>
+          ${i===selDay ? 'background:linear-gradient(180deg, #FFF8B4 0%, #FFE780 50%, #FFDA56 100%);color:var(--red-dk);box-shadow:0 3px 10px rgba(250,204,21,.6)' : 'background:var(--blue-grad);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.25)'}">${d.date}</span>
       `).join('') : `<span class="date-badge">${day.date}</span>`}
     </div>
     ${groups.length > 1 ? `<div class="group-pills">${groups.map((g,i) => `<span class="gpill${i===selGrp?' on':''}" onclick="pickGrp(${i})">${g.name}</span>`).join('')}</div>` : ''}
@@ -520,7 +515,7 @@ function rSched(data) {
             if (r.type === 'full') {
               const isTitle = idx === 0;
               const align = isLast ? 'left' : 'center';
-              return `<tr><td colspan="2" style="padding:${isTitle?'12px 14px':'8px 14px'};text-align:${align};${isTitle?'background:var(--blue-grad-hd);color:#fff;font-size:22px;font-weight:800':'background:#fff1f2;color:var(--text);font-size:17px;font-weight:600'};border-bottom:1px solid var(--bd);white-space:normal;word-break:break-word;line-height:1.6">${escNl(r.text)}</td></tr>`;
+              return `<tr><td colspan="2" style="padding:${isTitle?'12px 14px':'8px 14px'};text-align:${align};${isTitle?'background:var(--blue-grad-hd);color:#fff;font-size:22px;font-weight:800':'background:#eff6ff;color:var(--text);font-size:17px;font-weight:600'};border-bottom:1px solid var(--bd);white-space:normal;word-break:break-word;line-height:1.6">${escNl(r.text)}</td></tr>`;
             }
             if (r.type === 'tc') {
               return `<tr style="border-bottom:1px solid var(--bd)">
@@ -566,9 +561,7 @@ function rPeople(data) {
 
   const typeOrd = [], typeGrp = {}, clr = {};
   people.forEach(p => {
-    const c = safeHexColor(p.typeColor, '');
-    if (!typeGrp[p.type]) { typeGrp[p.type]=[]; typeOrd.push(p.type); clr[p.type]=c || '#b91c1c'; }
-    else if (c && clr[p.type] === '#b91c1c') clr[p.type] = c;
+    if (!typeGrp[p.type]) { typeGrp[p.type]=[]; typeOrd.push(p.type); clr[p.type]=p.typeColor||'#b91c1c'; }
     typeGrp[p.type].push(p);
   });
   const groups = ['全部', ...new Set(people.map(p=>p.group).filter(Boolean))];
@@ -580,7 +573,7 @@ function rPeople(data) {
     <div style="position:relative;margin-bottom:12px"><input id="pSearch" type="search" placeholder="搜索姓名…" style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--bd);border-radius:20px;font-size:17px;font-family:inherit;outline:none;background:#fff" oninput="filterP(this.value)"><svg viewBox="0 0 512 512" class="ic" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px;pointer-events:none" fill="currentColor"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></div>
     ${sections.map(s=>`
       <div class="type-group">
-        <div class="type-hd" style="background:${s.color}"><span>${s.type}</span></div>
+        <div class="type-hd" style="background:var(--blue-grad-hd)"><span>${s.type}</span></div>
         ${s.list.map((p,i)=>`
           <div class="p-row">
             ${p.avatar ? `<img class="p-img" src="${p.avatar}" alt="${p.name}">` : ""}
@@ -686,18 +679,13 @@ function rHotel(data) {
   };
 
   const ord=[], grp={}, clr={};
-  hotel.forEach(h=>{
-    const c = safeHexColor(h.typeColor, '');
-    if(!grp[h.type]){grp[h.type]=[];ord.push(h.type);clr[h.type]=c || '#b91c1c';}
-    else if (c && clr[h.type] === '#b91c1c') clr[h.type] = c;
-    grp[h.type].push(h);
-  });
+  hotel.forEach(h=>{ if(!grp[h.type]){grp[h.type]=[];ord.push(h.type);clr[h.type]=h.typeColor||'#b91c1c';} grp[h.type].push(h); });
   const total = hotel.length;
   return `
     <div style="position:relative;margin-bottom:12px"><input type="search" placeholder="搜索姓名或房号…" style="width:100%;padding:9px 12px 9px 36px;border:1.5px solid var(--bd);border-radius:20px;font-size:15px;font-family:inherit;outline:none;background:#fff" oninput="filterH(this.value)"><svg viewBox="0 0 512 512" class="ic" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#aaa;font-size:14px;pointer-events:none" fill="currentColor"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376C296.3 401.1 253.9 416 208 416 93.1 416 0 322.9 0 208S93.1 0 208 0 416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></div>
     ${ord.map(t=>`
       <div class="type-group">
-        <div class="type-hd" style="background:${clr[t]}"><span>${t}</span></div>
+        <div class="type-hd" style="background:var(--blue-grad-hd)"><span>${t}</span></div>
         ${grp[t].map(r=>`
           <div class="p-row">
             <div class="p-info">
