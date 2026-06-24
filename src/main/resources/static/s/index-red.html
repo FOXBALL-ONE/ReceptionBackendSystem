@@ -757,10 +757,28 @@ function rService(data) {
   const attendNotice = D.attendNotice || '';
 
   const sections = [];
+  const esc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const telHref = t => String(t || '').replace(/[^\d+]/g, '');
+  const roomOf = m => {
+    const room = String(m.room || '').trim().replace(/^房号\s*/, '');
+    if (room) return room;
+    const dutyMatch = String(m.duty || '').match(/房号\s*([0-9A-Za-z\u4e00-\u9fa5-]+)/);
+    if (dutyMatch) return dutyMatch[1];
+    const nameMatch = String(m.name || '').match(/\s*房号\s*([0-9A-Za-z\u4e00-\u9fa5-]+)\s*$/);
+    return nameMatch ? nameMatch[1] : '';
+  };
+  const contactNameOf = m => String(m.name || '').replace(/\s*房号\s*[0-9A-Za-z\u4e00-\u9fa5-]+\s*$/, '').trim();
+  const contactRows = staff.flatMap(g => (g.members || [])
+    .filter(m => m && (m.name || m.phone || m.duty || m.room))
+    .map((m, i) => ({
+      unit: i === 0 ? (g.type || '') : '',
+      name: contactNameOf(m),
+      phone: m.phone || '',
+      room: roomOf(m),
+    })));
 
   if (isNoticeMode) {
     if (attendNotice.trim()) {
-      const esc = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const title = D.attendNoticeTitle || '参会须知';
       sections.push(`
         <div style="text-align:center;font-size:22px;font-weight:800;color:var(--text);margin-bottom:40px">${esc(title)}</div>
@@ -789,7 +807,7 @@ function rService(data) {
     }
   }
 
-  if (true) {
+  if (contactRows.length) {
     sections.push(`
       <div style="">
         <div style="padding:12px 14px;color:#000;font-size:18px;font-weight:700;text-align:center">
@@ -804,61 +822,14 @@ function rService(data) {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">省委办公厅</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">翁　标18965907858</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">2226</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">钟月容18350061166</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">2215</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">省政府办公厅</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">林泽梁15880053300</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">2126</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">邱寅峻13960723633</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">2118</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">省农业农村厅</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">陈卫峰13950288936</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">1226</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">林　维18650539191</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">1228</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">省特勤局</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">蓝增金17759001950</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">1103</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">福州市</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">王松河15980224993</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">1812</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">林海滨13774517086</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">1402</td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">福清市</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">吴飞融18750756333</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-            </tr>
-            <tr>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center">陈荔莉13600878552</td>
-              <td style="padding:10px;border:1px solid var(--bd);text-align:center"></td>
-            </tr>
+            ${contactRows.map(row => `
+              <tr>
+                <td style="padding:10px;border:1px solid var(--bd);text-align:center">${esc(row.unit)}</td>
+                <td style="padding:10px;border:1px solid var(--bd);text-align:center;word-break:break-word">
+                  ${esc(row.name)}${row.phone ? `<a href="tel:${telHref(row.phone)}" style="color:var(--text);text-decoration:none">${esc(row.phone)}</a>` : ''}
+                </td>
+                <td style="padding:10px;border:1px solid var(--bd);text-align:center">${esc(row.room)}</td>
+              </tr>`).join('')}
           </tbody>
         </table>
       </div>

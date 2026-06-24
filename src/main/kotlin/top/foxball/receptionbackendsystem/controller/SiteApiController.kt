@@ -182,8 +182,10 @@ class SiteApiController(
                         type = staff.name,
                         members = staff.groupList.map { member ->
                             SiteContactResponse(
-                                name = listOfNotNull(member.name, member.duty).joinToString(" "),
+                                name = member.name,
                                 phone = member.phone,
+                                duty = member.duty,
+                                room = member.duty.toRoomNumber(),
                             )
                         },
                     )
@@ -360,9 +362,16 @@ class SiteApiController(
             lower.endsWith(".svg")
     }
 
+    private fun String?.toRoomNumber(): String? =
+        this
+            ?.trim()
+            ?.let { ROOM_NUMBER_REGEX.find(it)?.groupValues?.getOrNull(1) }
+            ?.takeIf { it.isNotBlank() }
+
     private companion object {
         private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("MM.dd")
         private val TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        private val ROOM_NUMBER_REGEX = Regex("""房号\s*([0-9A-Za-z\u4e00-\u9fa5-]+)""")
 
         private fun firstTag(tags: String?): String? =
             tags
@@ -441,6 +450,8 @@ data class SiteVehicleResponse(
 data class SiteContactResponse(
     val name: String?,
     val phone: String?,
+    val duty: String? = null,
+    val room: String? = null,
 )
 
 data class SiteMealResponse(
