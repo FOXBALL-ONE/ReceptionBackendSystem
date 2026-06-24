@@ -185,7 +185,6 @@ class SiteApiController(
                                 name = member.name,
                                 phone = member.phone,
                                 duty = member.duty,
-                                room = member.duty.toRoomNumber(),
                             )
                         },
                     )

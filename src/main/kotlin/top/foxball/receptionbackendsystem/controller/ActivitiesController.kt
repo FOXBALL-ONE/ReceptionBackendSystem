@@ -35,8 +35,8 @@ class ActivitiesController(
     }
 
     @PostMapping("/save-one")
-    fun saveOne(@RequestBody entity: Activities): ResponseEntity<ApiResponse> {
-        val activity = activitiesService.saveOne(entity)
+    fun saveOne(@RequestBody request: ActivityBasicSaveRequest): ResponseEntity<ApiResponse> {
+        val activity = activitiesService.saveBasic(request.toEntity())
 
         data class Response(
             val id: Long?,
@@ -163,8 +163,9 @@ class ActivitiesController(
     }
 
     @PostMapping("/update-one")
-    fun updateOne(@RequestBody entity: Activities): ResponseEntity<ApiResponse> {
-        val activity = activitiesService.updateOne(entity)
+    fun updateOne(@RequestBody request: ActivityBasicSaveRequest): ResponseEntity<ApiResponse> {
+        val id = request.id ?: return badRequest("id is required")
+        val activity = activitiesService.updateBasic(id, request.toEntity())
 
         data class Response(
             val id: Long?,

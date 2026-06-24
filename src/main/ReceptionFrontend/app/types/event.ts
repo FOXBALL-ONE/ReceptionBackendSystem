@@ -17,6 +17,23 @@ export interface Event {
   mealList?: Meal[];
 }
 
+export interface EventBasicPayload {
+  id?: number;
+  url: string;
+  masterTitle: string;
+  subtitle: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  bannerTags: string;
+  bannerUrl: string;
+  isAnimation: boolean;
+  isTopNavigationBar: boolean;
+  icp: string;
+  technicalSupport: string;
+  isOpen: boolean;
+}
+
 export interface Meal {
   name: string;
   description: string;

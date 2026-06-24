@@ -1,5 +1,6 @@
 package top.foxball.receptionbackendsystem.controller.request
 
+import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
 import top.foxball.receptionbackendsystem.datasource.jdbc.Car
 import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
@@ -12,6 +13,7 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
 import top.foxball.receptionbackendsystem.datasource.jdbc.StaffItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.WeatherItem
+import java.time.LocalDateTime
 
 data class IntIdRequest(
     val id: Int? = null,
@@ -38,6 +40,41 @@ data class ActivityOpenRequest(
     val id: Long? = null,
     val isOpen: Boolean? = null,
 )
+
+data class ActivityBasicSaveRequest(
+    val id: Long? = null,
+    val url: String? = null,
+    val masterTitle: String? = null,
+    val subtitle: String? = null,
+    val name: String? = null,
+    val startTime: LocalDateTime? = null,
+    val endTime: LocalDateTime? = null,
+    val bannerTags: String? = null,
+    val bannerUrl: String? = null,
+    val isAnimation: Boolean? = null,
+    val isTopNavigationBar: Boolean? = null,
+    val icp: String? = null,
+    val technicalSupport: String? = null,
+    val isOpen: Boolean? = null,
+) {
+    fun toEntity(): Activities =
+        Activities(
+            id = id,
+            url = url,
+            masterTitle = masterTitle,
+            subtitle = subtitle,
+            name = name,
+            startTime = startTime,
+            endTime = endTime,
+            bannerTags = bannerTags,
+            bannerUrl = bannerUrl,
+            isAnimation = isAnimation,
+            isTopNavigationBar = isTopNavigationBar,
+            icp = icp,
+            technicalSupport = technicalSupport,
+            isOpen = isOpen,
+        )
+}
 
 data class UrlRequest(
     val url: String? = null,

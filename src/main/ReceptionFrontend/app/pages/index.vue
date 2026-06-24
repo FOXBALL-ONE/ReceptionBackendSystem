@@ -396,7 +396,7 @@
 import { NIcon } from 'naive-ui'
 import type { FormInst, FormRules } from 'naive-ui'
 import { toDataURL } from 'qrcode'
-import type { Event, EventDisplayItem, EventStatus } from '~/types/event'
+import type { Event, EventBasicPayload, EventDisplayItem, EventStatus } from '~/types/event'
 import { EventStatusMap, convertEventToDisplayItem } from '~/types/event'
 
 const eventApi = useEventApi()
@@ -553,7 +553,7 @@ const qrCodeTargetUrl = computed(() => {
   return buildQrCodeTargetUrl(selectedQrEvent.value.path)
 })
 
-const buildCreatePayload = (): Partial<Event> => ({
+const buildCreatePayload = (): EventBasicPayload => ({
   url: normalizePath(createForm.url),
   name: createForm.name.trim(),
   masterTitle: createForm.masterTitle.trim(),

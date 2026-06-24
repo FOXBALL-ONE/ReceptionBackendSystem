@@ -1,4 +1,4 @@
-import type { Event } from '~/types/event'
+import type { Event, EventBasicPayload } from '~/types/event'
 
 export const useEventApi = () => {
   const { post } = useHttp()
@@ -8,6 +8,23 @@ export const useEventApi = () => {
 
     return Number.isFinite(numericId) ? numericId : id
   }
+
+  const toBasicPayload = (data: EventBasicPayload): EventBasicPayload => ({
+    ...(data.id ? { id: data.id } : {}),
+    url: data.url,
+    masterTitle: data.masterTitle,
+    subtitle: data.subtitle,
+    name: data.name,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    bannerTags: data.bannerTags,
+    bannerUrl: data.bannerUrl,
+    isAnimation: data.isAnimation,
+    isTopNavigationBar: data.isTopNavigationBar,
+    icp: data.icp,
+    technicalSupport: data.technicalSupport,
+    isOpen: data.isOpen,
+  })
 
   return {
     /**
@@ -34,16 +51,16 @@ export const useEventApi = () => {
     /**
      * 创建活动
      */
-    createEvent: async (data: Partial<Event>) => {
-      return await post<Event>('/activities/save-one', data, { payloadMode: 'json' })
+    createEvent: async (data: EventBasicPayload) => {
+      return await post<Event>('/activities/save-one', toBasicPayload(data), { payloadMode: 'json' })
     },
 
     /**
      * 更新活动
      */
-    updateEvent: async (id: string | number, activity: Record<string, any>) => {
+    updateEvent: async (id: string | number, activity: EventBasicPayload) => {
       return await post<Event>('/activities/update-one', {
-        ...activity,
+        ...toBasicPayload(activity),
         id: normalizeId(id),
       }, { payloadMode: 'json' })
     },

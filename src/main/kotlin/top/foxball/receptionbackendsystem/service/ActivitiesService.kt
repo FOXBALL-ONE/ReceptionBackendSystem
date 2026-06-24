@@ -14,4 +14,8 @@ interface ActivitiesService : ReceptionService<Activities, Long> {
     fun findOpenActivities(): List<Activities>
 
     fun updateIsOpen(id: Long, isOpen: Boolean): Activities
+
+    fun saveBasic(activity: Activities): Activities
+
+    fun updateBasic(id: Long, activity: Activities): Activities
 }

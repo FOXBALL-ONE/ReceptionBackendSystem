@@ -170,7 +170,7 @@
 
 <script setup lang="ts">
 import type { Ref } from 'vue'
-import type { Event as ActivityEvent } from '~/types/event'
+import type { Event as ActivityEvent, EventBasicPayload } from '~/types/event'
 import { GoUpload } from 'vue-icons-plus/go'
 
 const eventId = inject<Ref<string>>('eventId')
@@ -191,23 +191,6 @@ interface BasicFormData {
   subtitle: string
   startTime: string | null
   endTime: string | null
-  bannerTags: string
-  bannerUrl: string
-  isAnimation: boolean
-  isTopNavigationBar: boolean
-  icp: string
-  technicalSupport: string
-  isOpen: boolean
-}
-
-interface ActivityPayload {
-  id?: number
-  url: string
-  masterTitle: string
-  subtitle: string
-  name: string
-  startTime: string
-  endTime: string
   bannerTags: string
   bannerUrl: string
   isAnimation: boolean
@@ -445,8 +428,8 @@ async function handleBannerFileChange(event: globalThis.Event) {
   }
 }
 
-const buildPayload = (): ActivityPayload => {
-  const payload: ActivityPayload = {
+const buildPayload = (): EventBasicPayload => {
+  const payload: EventBasicPayload = {
     url: formData.url.trim(),
     masterTitle: formData.masterTitle.trim(),
     subtitle: formData.subtitle.trim(),
