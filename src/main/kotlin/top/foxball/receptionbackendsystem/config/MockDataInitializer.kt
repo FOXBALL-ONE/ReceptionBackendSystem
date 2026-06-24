@@ -38,7 +38,7 @@ import java.time.LocalDateTime
  * - Activities        ×1  聚合根，子实体全部通过 activity_id 关联并级联删除。
  * - ColorTag          ×3 PERSON + ×3 LODGING，被 Person / Lodging 复用，PromptService 以色值引用。
  * - Person            ×6  分属 3 个人员颜色标签，绑定考察组 id（松耦合，仅存 id）。
- * - InspectionTeamItem×3  各含路线节点与事件安排；只归属 activity，避免与 Schedule 重复持久化。
+ * - InspectionTeamItem×3  各含 3 天路线节点与事件安排；只归属 activity，避免与 Schedule 重复持久化。
  * - Schedule          ×3  对应活动三天日程，考察组通过 activity 侧统一管理。
  * - Car               ×3  各含随车人员值对象与乘客人员快照（jsonb）。
  * - Meal              ×3  对应三天用餐安排。
@@ -119,35 +119,130 @@ class MockDataInitializer(
         val day3 = Schedule(activity = activity, scheduleTags = "第三天,民生服务,上午")
         activity.schedules.addAll(listOf(day1, day2, day3))
 
-        // ---------- 考察组：3 个身份，每个绑定对应天的行程 ----------
+        // ---------- 考察组：3 个身份，每个身份包含 3 天行程，每天 3 个安排 ----------
+        fun itinerary(
+            schedule: Schedule,
+            dayOffset: Long,
+            routeUrl: String,
+            scheduleUrl: String,
+            routeNode: List<String>,
+            eventSpecs: List<EventSpec>,
+        ) = InspectionTeamItinerary(
+            inspectionTeam = null,
+            schedule = schedule,
+            routeUrl = routeUrl,
+            scheduleUrl = scheduleUrl,
+            routeNode = routeNode.toMutableList(),
+            eventArrangements = eventSpecs.map { spec ->
+                EventArrangementsItem(
+                    startTime = startTime.plusDays(dayOffset).withHour(spec.startHour).withMinute(spec.startMinute),
+                    endTime = startTime.plusDays(dayOffset).withHour(spec.endHour).withMinute(spec.endMinute),
+                    content = spec.content,
+                    location = spec.location,
+                )
+            }.toMutableList(),
+        )
+
         val projectTeam = InspectionTeamItem(
             activity = activity,
             name = "项目观摩组",
             itineraries = mutableListOf(
-                InspectionTeamItinerary(
-                    inspectionTeam = null,
+                itinerary(
                     schedule = day1,
-                    routeUrl = "/mock/routes/project-team.pdf",
-                    scheduleUrl = "/mock/schedules/project-team.pdf",
-                    routeNode = mutableListOf("政务中心", "智能制造园", "新能源基地", "项目展厅"),
-                    eventArrangements = mutableListOf(
-                        EventArrangementsItem(
-                            startTime = startTime.withHour(9).withMinute(30),
-                            endTime = startTime.withHour(10).withMinute(30),
+                    dayOffset = 0,
+                    routeUrl = "/mock/routes/project-team-day1.pdf",
+                    scheduleUrl = "/mock/schedules/project-team-day1.pdf",
+                    routeNode = listOf("政务中心", "智能制造园", "新能源基地", "项目展厅"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 30,
+                            endHour = 10,
+                            endMinute = 30,
                             content = "听取重点项目建设情况汇报",
                             location = "政务中心第一会议室",
                         ),
-                        EventArrangementsItem(
-                            startTime = startTime.withHour(10).withMinute(45),
-                            endTime = startTime.withHour(12).withMinute(0),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 45,
+                            endHour = 12,
+                            endMinute = 0,
                             content = "观摩智能制造生产线",
                             location = "智能制造园一号车间",
                         ),
-                        EventArrangementsItem(
-                            startTime = startTime.withHour(14).withMinute(0),
-                            endTime = startTime.withHour(15).withMinute(30),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 0,
+                            endHour = 15,
+                            endMinute = 30,
                             content = "调研新能源基地储能项目",
                             location = "新能源基地展厅",
+                        ),
+                    ),
+                ),
+                itinerary(
+                    schedule = day2,
+                    dayOffset = 1,
+                    routeUrl = "/mock/routes/project-team-day2.pdf",
+                    scheduleUrl = "/mock/schedules/project-team-day2.pdf",
+                    routeNode = listOf("项目指挥部", "产业配套园", "创新孵化中心", "企业服务大厅"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 15,
+                            content = "听取重大项目推进机制介绍",
+                            location = "项目指挥部调度室",
+                        ),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 30,
+                            endHour = 11,
+                            endMinute = 45,
+                            content = "考察产业链配套服务平台",
+                            location = "产业配套园服务中心",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 30,
+                            endHour = 16,
+                            endMinute = 0,
+                            content = "座谈项目招引与企业服务工作",
+                            location = "企业服务大厅三层会议室",
+                        ),
+                    ),
+                ),
+                itinerary(
+                    schedule = day3,
+                    dayOffset = 2,
+                    routeUrl = "/mock/routes/project-team-day3.pdf",
+                    scheduleUrl = "/mock/schedules/project-team-day3.pdf",
+                    routeNode = listOf("数字经济产业园", "科创路演中心", "综合交通枢纽", "总结会场"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 10,
+                            content = "调研数字经济产业园运营情况",
+                            location = "数字经济产业园展示中心",
+                        ),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 25,
+                            endHour = 11,
+                            endMinute = 40,
+                            content = "观摩科创企业路演成果",
+                            location = "科创路演中心",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 0,
+                            endHour = 15,
+                            endMinute = 30,
+                            content = "召开项目观摩组总结交流会",
+                            location = "政务中心第二会议室",
                         ),
                     ),
                 ),
@@ -158,30 +253,102 @@ class MockDataInitializer(
             activity = activity,
             name = "城市更新组",
             itineraries = mutableListOf(
-                InspectionTeamItinerary(
-                    inspectionTeam = null,
+                itinerary(
+                    schedule = day1,
+                    dayOffset = 0,
+                    routeUrl = "/mock/routes/city-team-day1.pdf",
+                    scheduleUrl = "/mock/schedules/city-team-day1.pdf",
+                    routeNode = listOf("城市展馆", "更新示范街区", "口袋公园", "历史街巷"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 15,
+                            endHour = 10,
+                            endMinute = 15,
+                            content = "参观城市规划与更新成果展",
+                            location = "城市展馆",
+                        ),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 30,
+                            endHour = 11,
+                            endMinute = 45,
+                            content = "调研更新示范街区改造情况",
+                            location = "更新示范街区",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 0,
+                            endHour = 15,
+                            endMinute = 20,
+                            content = "考察口袋公园便民设施建设",
+                            location = "青年路口袋公园",
+                        ),
+                    ),
+                ),
+                itinerary(
                     schedule = day2,
-                    routeUrl = "/mock/routes/city-team.pdf",
-                    scheduleUrl = "/mock/schedules/city-team.pdf",
-                    routeNode = mutableListOf("城市展馆", "更新示范街区", "公共服务中心"),
-                    eventArrangements = mutableListOf(
-                        EventArrangementsItem(
-                            startTime = startTime.plusDays(1).withHour(9).withMinute(0),
-                            endTime = startTime.plusDays(1).withHour(10).withMinute(30),
+                    dayOffset = 1,
+                    routeUrl = "/mock/routes/city-team-day2.pdf",
+                    scheduleUrl = "/mock/schedules/city-team-day2.pdf",
+                    routeNode = listOf("城市展馆", "更新示范街区", "公共服务中心"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 30,
                             content = "参观城市更新成果展",
                             location = "城市展馆",
                         ),
-                        EventArrangementsItem(
-                            startTime = startTime.plusDays(1).withHour(10).withMinute(45),
-                            endTime = startTime.plusDays(1).withHour(11).withMinute(45),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 45,
+                            endHour = 11,
+                            endMinute = 45,
                             content = "调研便民服务建设",
                             location = "公共服务中心",
                         ),
-                        EventArrangementsItem(
-                            startTime = startTime.plusDays(1).withHour(14).withMinute(30),
-                            endTime = startTime.plusDays(1).withHour(16).withMinute(0),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 30,
+                            endHour = 16,
+                            endMinute = 0,
                             content = "走访更新示范街区便民商户",
                             location = "更新示范街区",
+                        ),
+                    ),
+                ),
+                itinerary(
+                    schedule = day3,
+                    dayOffset = 2,
+                    routeUrl = "/mock/routes/city-team-day3.pdf",
+                    scheduleUrl = "/mock/schedules/city-team-day3.pdf",
+                    routeNode = listOf("海绵城市示范区", "智慧停车平台", "城市管理指挥中心", "总结会场"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 0,
+                            content = "调研海绵城市示范区建设",
+                            location = "滨河海绵城市示范区",
+                        ),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 15,
+                            endHour = 11,
+                            endMinute = 30,
+                            content = "了解智慧停车平台运行情况",
+                            location = "智慧停车运营中心",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 0,
+                            endHour = 15,
+                            endMinute = 30,
+                            content = "召开城市更新组总结交流会",
+                            location = "城市管理指挥中心会议室",
                         ),
                     ),
                 ),
@@ -192,24 +359,102 @@ class MockDataInitializer(
             activity = activity,
             name = "民生服务组",
             itineraries = mutableListOf(
-                InspectionTeamItinerary(
-                    inspectionTeam = null,
+                itinerary(
+                    schedule = day1,
+                    dayOffset = 0,
+                    routeUrl = "/mock/routes/service-team-day1.pdf",
+                    scheduleUrl = "/mock/schedules/service-team-day1.pdf",
+                    routeNode = listOf("政务服务大厅", "市民热线中心", "社区卫生服务站", "养老服务中心"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 0,
+                            content = "体验政务服务大厅一窗办理流程",
+                            location = "政务服务大厅",
+                        ),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 15,
+                            endHour = 11,
+                            endMinute = 15,
+                            content = "了解市民热线受理转办机制",
+                            location = "市民热线中心",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 0,
+                            endHour = 15,
+                            endMinute = 30,
+                            content = "调研社区卫生便民服务",
+                            location = "东湖社区卫生服务站",
+                        ),
+                    ),
+                ),
+                itinerary(
+                    schedule = day2,
+                    dayOffset = 1,
+                    routeUrl = "/mock/routes/service-team-day2.pdf",
+                    scheduleUrl = "/mock/schedules/service-team-day2.pdf",
+                    routeNode = listOf("社区党群服务中心", "便民服务驿站", "智慧养老平台", "公共文化空间"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 10,
+                            content = "观摩社区党群服务开展情况",
+                            location = "社区党群服务中心",
+                        ),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 25,
+                            endHour = 11,
+                            endMinute = 30,
+                            content = "调研便民服务驿站运行情况",
+                            location = "邻里便民服务驿站",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 30,
+                            endHour = 16,
+                            endMinute = 0,
+                            content = "了解智慧养老平台服务场景",
+                            location = "智慧养老服务中心",
+                        ),
+                    ),
+                ),
+                itinerary(
                     schedule = day3,
-                    routeUrl = "/mock/routes/service-team.pdf",
-                    scheduleUrl = "/mock/schedules/service-team.pdf",
-                    routeNode = mutableListOf("市民热线中心", "社区党群服务中心", "智慧城市运行大厅"),
-                    eventArrangements = mutableListOf(
-                        EventArrangementsItem(
-                            startTime = startTime.plusDays(2).withHour(9).withMinute(0),
-                            endTime = startTime.plusDays(2).withHour(10).withMinute(0),
+                    dayOffset = 2,
+                    routeUrl = "/mock/routes/service-team-day3.pdf",
+                    scheduleUrl = "/mock/schedules/service-team-day3.pdf",
+                    routeNode = listOf("市民热线中心", "社区党群服务中心", "智慧城市运行大厅"),
+                    eventSpecs = listOf(
+                        EventSpec(
+                            startHour = 9,
+                            startMinute = 0,
+                            endHour = 10,
+                            endMinute = 0,
                             content = "了解市民热线接办流程",
                             location = "市民热线中心",
                         ),
-                        EventArrangementsItem(
-                            startTime = startTime.plusDays(2).withHour(10).withMinute(15),
-                            endTime = startTime.plusDays(2).withHour(11).withMinute(30),
+                        EventSpec(
+                            startHour = 10,
+                            startMinute = 15,
+                            endHour = 11,
+                            endMinute = 30,
                             content = "观摩社区党群服务开展情况",
                             location = "社区党群服务中心",
+                        ),
+                        EventSpec(
+                            startHour = 14,
+                            startMinute = 0,
+                            endHour = 15,
+                            endMinute = 30,
+                            content = "召开民生服务组总结交流会",
+                            location = "智慧城市运行大厅会议室",
                         ),
                     ),
                 ),
@@ -445,6 +690,15 @@ class MockDataInitializer(
 
         return activity
     }
+
+    private data class EventSpec(
+        val startHour: Int,
+        val startMinute: Int,
+        val endHour: Int,
+        val endMinute: Int,
+        val content: String,
+        val location: String,
+    )
 
     private fun mockImage(
         activity: Activities,

@@ -44,7 +44,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # 每次启动时重新创建表结构
+      ddl-auto: create  # 每次启动时重新创建表结构
     show-sql: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:

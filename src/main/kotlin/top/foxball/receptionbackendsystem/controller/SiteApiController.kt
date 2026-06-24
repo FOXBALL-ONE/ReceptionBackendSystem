@@ -113,7 +113,7 @@ class SiteApiController(
                     name = car.driver,
                     phone = car.driverNumber,
                 ),
-                passengers = car.passengersList.mapNotNull { it.displayName() },
+                passengers = car.passengersList.mapNotNull { it.name },
                 leaders = car.passengersOnBoardList.map {
                     SiteContactResponse(
                         name = it.name,
@@ -310,7 +310,7 @@ class SiteApiController(
             .takeIf { it.isNotBlank() }
 
     private fun Person.displayName(): String? =
-        nickName?.takeIf { it.isNotBlank() } ?: name
+        name?.takeIf { it.isNotBlank() } ?: name
 
     private fun InspectionPoint.siteName(index: Int): String =
         description
