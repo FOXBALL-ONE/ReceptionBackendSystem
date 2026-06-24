@@ -6,9 +6,10 @@ import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
 
 /**
- * 活动日程实体。
+ * 活动日程实体（天注册表）。
  *
- * 保存活动下的日程标签以及该日程关联的考察组安排。
+ * 保存活动下“每天”的标签（scheduleTags），作为各天顺序的权威来源。
+ * 考察组行程不再挂在本实体下，而是按 [InspectionTeamItinerary] 关联到具体某天。
  */
 @Table(name = "schedule")
 @Entity
@@ -29,10 +30,4 @@ data class Schedule(
     /** 日程标签文案，多个标签由业务层约定格式。 */
     @Column(name = "schedule_tags")
     var scheduleTags: String? = null,
-
-    /** 考察组安排列表，随日程级联保存和删除。 */
-    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
-    @JoinColumn(name = "schedule_id")
-    @OrderColumn(name = "inspection_team_order")
-    var inspectionTeamItem: MutableList<InspectionTeamItem> = mutableListOf(),
 )

@@ -18,6 +18,7 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
 import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
 import top.foxball.receptionbackendsystem.datasource.jdbc.Car
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItinerary
 import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
@@ -64,8 +65,7 @@ class ExcelDatabaseExportService(
         EasyExcel.writerSheet(index, name).head(head).build()
 
     private fun Activities.toPersonnelRows(): List<PersonnelItem> {
-        val teamNamesById = schedules
-            .flatMap(Schedule::inspectionTeamItem)
+        val teamNamesById = inspectionTeamItemList
             .mapNotNull { team -> team.id?.let { it to team.name } }
             .toMap()
 
@@ -140,20 +140,21 @@ class ExcelDatabaseExportService(
         }
 
     private fun Activities.toScheduleRows(): List<ScheduleExcelRow> =
-        schedules.flatMap { schedule -> schedule.toScheduleRows() }
+        inspectionTeamItemList.flatMap { team -> team.toScheduleRows() }
 
-    private fun Schedule.toScheduleRows(): List<ScheduleExcelRow> =
-        inspectionTeamItem.flatMap { team -> team.toScheduleRows() }
+    private fun InspectionTeamItem.toScheduleRows(): List<ScheduleExcelRow> =
+        itineraries.flatMap { itinerary -> itinerary.toScheduleRows(name) }
 
-    private fun InspectionTeamItem.toScheduleRows(): List<ScheduleExcelRow> {
+    private fun InspectionTeamItinerary.toScheduleRows(teamName: String?): List<ScheduleExcelRow> {
         val date = eventArrangements.firstOrNull()?.startTime?.format(DateFormatter)
+            ?: schedule?.scheduleTags
         val route = routeNode.joinToString(" → ").takeIf { it.isNotBlank() }
         val events = eventArrangements.ifEmpty { mutableListOf(null) }
 
         return events.mapIndexed { index, event ->
             ScheduleExcelRow(
                 date = if (index == 0) date else null,
-                inspectionTeam = if (index == 0) name else null,
+                inspectionTeam = if (index == 0) teamName else null,
                 line = if (index == 0) route else null,
                 time = event?.startTime?.format(TimeFormatter),
                 context = event?.content,

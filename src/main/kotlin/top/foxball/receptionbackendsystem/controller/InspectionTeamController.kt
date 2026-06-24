@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.controller.request.ActivityIdRequest
 import top.foxball.receptionbackendsystem.controller.request.EntityBatchRequest
+import top.foxball.receptionbackendsystem.controller.request.InspectionTeamSaveRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdsRequest
 import top.foxball.receptionbackendsystem.controller.request.NameRequest
@@ -22,58 +23,28 @@ class InspectionTeamController(
     private val inspectionTeamService: InspectionTeamService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    @PostMapping("/save-by-activity")
+    fun saveByActivity(@RequestBody request: InspectionTeamSaveRequest): ResponseEntity<ApiResponse> {
+        val activityId = request.activityId ?: return badRequest("activityId is required")
+        val groups = inspectionTeamService.saveByActivity(activityId, request.items)
+
+        val rs = groups.map { it.toResponse() }
+
+        return builder.ok().data(rs).build()
+    }
+
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: InspectionTeamItem): ResponseEntity<ApiResponse> {
         val inspectionTeam = inspectionTeamService.saveOne(entity)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = Response(
-            id = inspectionTeam.id,
-            activityId = inspectionTeam.activity?.id,
-            name = inspectionTeam.name,
-            routeUrl = inspectionTeam.routeUrl,
-            scheduleUrl = inspectionTeam.scheduleUrl,
-            routeNode = inspectionTeam.routeNode,
-            eventArrangements = inspectionTeam.eventArrangements,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionTeam.toResponse()).build()
     }
 
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<InspectionTeamItem>): ResponseEntity<ApiResponse> {
         val inspectionTeams = inspectionTeamService.saveBatch(request.items)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = inspectionTeams.map { inspectionTeam ->
-            Response(
-                id = inspectionTeam.id,
-                activityId = inspectionTeam.activity?.id,
-                name = inspectionTeam.name,
-                routeUrl = inspectionTeam.routeUrl,
-                scheduleUrl = inspectionTeam.scheduleUrl,
-                routeNode = inspectionTeam.routeNode,
-                eventArrangements = inspectionTeam.eventArrangements,
-            )
-        }
+        val rs = inspectionTeams.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -82,54 +53,14 @@ class InspectionTeamController(
     fun updateOne(@RequestBody entity: InspectionTeamItem): ResponseEntity<ApiResponse> {
         val inspectionTeam = inspectionTeamService.updateOne(entity)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = Response(
-            id = inspectionTeam.id,
-            activityId = inspectionTeam.activity?.id,
-            name = inspectionTeam.name,
-            routeUrl = inspectionTeam.routeUrl,
-            scheduleUrl = inspectionTeam.scheduleUrl,
-            routeNode = inspectionTeam.routeNode,
-            eventArrangements = inspectionTeam.eventArrangements,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionTeam.toResponse()).build()
     }
 
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<InspectionTeamItem>): ResponseEntity<ApiResponse> {
         val inspectionTeams = inspectionTeamService.updateBatch(request.items)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = inspectionTeams.map { inspectionTeam ->
-            Response(
-                id = inspectionTeam.id,
-                activityId = inspectionTeam.activity?.id,
-                name = inspectionTeam.name,
-                routeUrl = inspectionTeam.routeUrl,
-                scheduleUrl = inspectionTeam.scheduleUrl,
-                routeNode = inspectionTeam.routeNode,
-                eventArrangements = inspectionTeam.eventArrangements,
-            )
-        }
+        val rs = inspectionTeams.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -147,27 +78,7 @@ class InspectionTeamController(
         val id = request.id ?: return badRequest("id is required")
         val inspectionTeam = inspectionTeamService.findEntityById(id) ?: return notFound("entity not found")
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = Response(
-            id = inspectionTeam.id,
-            activityId = inspectionTeam.activity?.id,
-            name = inspectionTeam.name,
-            routeUrl = inspectionTeam.routeUrl,
-            scheduleUrl = inspectionTeam.scheduleUrl,
-            routeNode = inspectionTeam.routeNode,
-            eventArrangements = inspectionTeam.eventArrangements,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionTeam.toResponse()).build()
     }
 
     @PostMapping("/find-by-activity-id")
@@ -175,27 +86,7 @@ class InspectionTeamController(
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val inspectionTeams = inspectionTeamService.findByActivityId(activityId)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = inspectionTeams.map { inspectionTeam ->
-            Response(
-                id = inspectionTeam.id,
-                activityId = inspectionTeam.activity?.id,
-                name = inspectionTeam.name,
-                routeUrl = inspectionTeam.routeUrl,
-                scheduleUrl = inspectionTeam.scheduleUrl,
-                routeNode = inspectionTeam.routeNode,
-                eventArrangements = inspectionTeam.eventArrangements,
-            )
-        }
+        val rs = inspectionTeams.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -205,28 +96,40 @@ class InspectionTeamController(
         val name = request.name?.takeIf { it.isNotBlank() } ?: return badRequest("name is required")
         val inspectionTeams = inspectionTeamService.findByNameContaining(name)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val name: String?,
-            val routeUrl: String?,
-            val scheduleUrl: String?,
-            val routeNode: List<String>,
-            val eventArrangements: List<EventArrangementsItem>,
-        )
-
-        val rs = inspectionTeams.map { inspectionTeam ->
-            Response(
-                id = inspectionTeam.id,
-                activityId = inspectionTeam.activity?.id,
-                name = inspectionTeam.name,
-                routeUrl = inspectionTeam.routeUrl,
-                scheduleUrl = inspectionTeam.scheduleUrl,
-                routeNode = inspectionTeam.routeNode,
-                eventArrangements = inspectionTeam.eventArrangements,
-            )
-        }
+        val rs = inspectionTeams.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
+
+    private fun InspectionTeamItem.toResponse() = InspectionTeamResponse(
+        id = id,
+        activityId = activity?.id,
+        name = name,
+        itineraries = itineraries.map { itinerary ->
+            InspectionTeamItineraryResponse(
+                id = itinerary.id,
+                scheduleId = itinerary.schedule?.id,
+                routeUrl = itinerary.routeUrl,
+                scheduleUrl = itinerary.scheduleUrl,
+                routeNode = itinerary.routeNode,
+                eventArrangements = itinerary.eventArrangements,
+            )
+        },
+    )
+
+    private data class InspectionTeamResponse(
+        val id: Long?,
+        val activityId: Long?,
+        val name: String?,
+        val itineraries: List<InspectionTeamItineraryResponse>,
+    )
+
+    private data class InspectionTeamItineraryResponse(
+        val id: Long?,
+        val scheduleId: Long?,
+        val routeUrl: String?,
+        val scheduleUrl: String?,
+        val routeNode: List<String>,
+        val eventArrangements: List<EventArrangementsItem>,
+    )
 }

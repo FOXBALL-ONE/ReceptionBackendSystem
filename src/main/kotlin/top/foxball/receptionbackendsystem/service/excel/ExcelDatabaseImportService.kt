@@ -20,6 +20,7 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
 import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItinerary
 import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
 import top.foxball.receptionbackendsystem.datasource.jdbc.OneStaff
@@ -129,7 +130,11 @@ class ExcelDatabaseImportService(
         activity.colorTagList = colorTagsByName.values.toMutableList()
         activity.inspectionPoints = parsed.inspectionPoints.map { it.toInspectionPoint(activity) }.toMutableList()
         activity.overviewOfTheCityAndCounty = parsed.overviews.map { it.toOverview(activity) }.toMutableList()
-        activity.schedules = parsed.schedules.toSchedules(activity, startTime?.year ?: Year.now().value).toMutableList()
+        val importedSchedules = parsed.schedules.toSchedules(activity)
+        activity.schedules = importedSchedules.toMutableList()
+        activity.inspectionTeamItemList = parsed.schedules
+            .toInspectionTeams(activity, importedSchedules, startTime?.year ?: Year.now().value)
+            .toMutableList()
         activity.promptServiceList = mutableListOf(parsed.toPromptService(activity))
 
         bindActivityChildren(activity)
@@ -158,9 +163,11 @@ class ExcelDatabaseImportService(
         activity.colorTagList.forEach { it.activity = activity }
         activity.inspectionPoints.forEach { it.activity = activity }
         activity.overviewOfTheCityAndCounty.forEach { it.activity = activity }
-        activity.schedules.forEach { schedule ->
-            schedule.activity = activity
-            schedule.inspectionTeamItem.forEach { it.activity = activity }
+        activity.schedules.forEach { it.activity = activity }
+        // 考察组身份挂活动级；行程在导入时已绑定到对应天，这里统一回填归属活动。
+        activity.inspectionTeamItemList.forEach { team ->
+            team.activity = activity
+            team.itineraries.forEach { it.inspectionTeam = team }
         }
         activity.promptServiceList.forEach { it.activity = activity }
     }
@@ -251,23 +258,49 @@ class ExcelDatabaseImportService(
             ),
         )
 
-    private fun List<ScheduleItem>.toSchedules(activity: Activities, year: Int): List<Schedule> =
-        groupBy { it.date?.trimToNull() ?: "待定" }
-            .map { (date, scheduleItems) ->
+    private fun List<ScheduleItem>.toSchedules(activity: Activities): List<Schedule> =
+        mapNotNull { it.date?.trimToNull() ?: "待定" }
+            .distinct()
+            .map { date ->
                 Schedule(
                     activity = activity,
                     scheduleTags = date,
-                    inspectionTeamItem = scheduleItems.map { it.toInspectionTeamItem(activity, year) }.toMutableList(),
                 )
             }
 
-    private fun ScheduleItem.toInspectionTeamItem(activity: Activities, year: Int): InspectionTeamItem =
-        InspectionTeamItem(
-            activity = activity,
-            name = inspectionTeam?.trimToNull(),
-            routeNode = line.toRouteNodes(),
-            eventArrangements = eventList.mapNotNull { it.toEventArrangement(date, year) }.toMutableList(),
-        )
+    /**
+     * 按考察组名称聚合成活动级身份（同名=同一组），每行 (date, team) 生成一条挂到对应天的行程。
+     */
+    private fun List<ScheduleItem>.toInspectionTeams(
+        activity: Activities,
+        schedules: List<Schedule>,
+        year: Int,
+    ): List<InspectionTeamItem> {
+        val scheduleByTag = schedules.associateBy { it.scheduleTags }
+        val teamsByName = linkedMapOf<String, InspectionTeamItem>()
+
+        forEach { item ->
+            val teamName = item.inspectionTeam?.trimToNull() ?: return@forEach
+            val team = teamsByName.getOrPut(teamName) {
+                InspectionTeamItem(activity = activity, name = teamName)
+            }
+            val schedule = scheduleByTag[item.date?.trimToNull() ?: "待定"] ?: return@forEach
+            team.itineraries += item.toItinerary(team, schedule, year)
+        }
+
+        return teamsByName.values.toList()
+    }
+
+    private fun ScheduleItem.toItinerary(
+        team: InspectionTeamItem,
+        schedule: Schedule,
+        year: Int,
+    ): InspectionTeamItinerary = InspectionTeamItinerary(
+        inspectionTeam = team,
+        schedule = schedule,
+        routeNode = line.toRouteNodes(),
+        eventArrangements = eventList.mapNotNull { it.toEventArrangement(date, year) }.toMutableList(),
+    )
 
     private fun TimeAndContextItem.toEventArrangement(dateText: String?, year: Int): EventArrangementsItem? {
         val start = parseDateTime(dateText, time, year)

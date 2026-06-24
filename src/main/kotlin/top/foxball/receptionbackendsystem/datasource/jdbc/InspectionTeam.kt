@@ -7,14 +7,15 @@ import org.hibernate.annotations.OnDeleteAction
 import java.time.LocalDateTime
 
 /**
- * 考察组安排实体。
+ * 考察组身份实体。
  *
- * 保存单个考察组的名称、路线、日程附件地址以及事件安排。
+ * 代表活动下一个跨天共用的考察组身份（名称），供人员分组绑定使用。
+ * 每天的具体行程（路线、事件安排、文件地址）存放在 [itineraries] 中，按天独立。
  */
 @Entity
 @Table(name = "inspection_team_item")
 data class InspectionTeamItem(
-    /** 考察组安排主键。 */
+    /** 考察组身份主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -26,33 +27,66 @@ data class InspectionTeamItem(
     @OnDelete(action = OnDeleteAction.CASCADE)
     var activity: Activities? = null,
 
-    /** 考察组名称。 */
+    /** 考察组名称，跨天共用同一身份。 */
     @Column(name = "name")
     var name: String? = null,
 
-    /** 路线文件或路线页面地址。 */
+    /** 各天行程列表，删除考察组时级联删除对应行程。 */
+    @OneToMany(mappedBy = "inspectionTeam", cascade = [CascadeType.ALL], orphanRemoval = true)
+    var itineraries: MutableList<InspectionTeamItinerary> = mutableListOf(),
+)
+
+/**
+ * 考察组某一天的行程安排。
+ *
+ * 每条记录对应一个考察组（[inspectionTeam]）在某一天（[schedule]）的路线节点、
+ * 事件安排及路线图/日程文件地址。同一考察组在不同天有各自独立的行程。
+ */
+@Entity
+@Table(name = "inspection_team_itinerary")
+data class InspectionTeamItinerary(
+    /** 行程主键。 */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    var id: Long? = null,
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inspection_team_item_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    var inspectionTeam: InspectionTeamItem? = null,
+
+    /** 所属日程天，行程按天独立。 */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "schedule_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    var schedule: Schedule? = null,
+
+    /** 当天路线文件或路线页面地址。 */
     @Column(name = "route_url")
     var routeUrl: String? = null,
 
-    /** 日程文件或日程页面地址。 */
+    /** 当天日程文件或日程页面地址。 */
     @Column(name = "schedule_url")
     var scheduleUrl: String? = null,
 
-    /** 路线节点列表，按 node_order 保持前端展示顺序。 */
+    /** 当天路线节点列表，按 node_order 保持前端展示顺序。 */
     @ElementCollection
     @CollectionTable(
-        name = "inspection_team_route_node",
-        joinColumns = [JoinColumn(name = "inspection_team_item_id")]
+        name = "inspection_team_itinerary_route_node",
+        joinColumns = [JoinColumn(name = "inspection_team_itinerary_id")]
     )
     @OrderColumn(name = "node_order")
     @Column(name = "route_node")
     var routeNode: MutableList<String> = mutableListOf(),
 
-    /** 事件安排列表，按 event_order 保持前端展示顺序。 */
+    /** 当天事件安排列表，按 event_order 保持前端展示顺序。 */
     @ElementCollection
     @CollectionTable(
-        name = "inspection_team_event_arrangements",
-        joinColumns = [JoinColumn(name = "inspection_team_item_id")]
+        name = "inspection_team_itinerary_event_arrangements",
+        joinColumns = [JoinColumn(name = "inspection_team_itinerary_id")]
     )
     @OrderColumn(name = "event_order")
     var eventArrangements: MutableList<EventArrangementsItem> = mutableListOf(),

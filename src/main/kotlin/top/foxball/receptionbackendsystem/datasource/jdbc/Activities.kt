@@ -93,7 +93,7 @@ data class Activities(
     @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
     var colorTagList: MutableList<ColorTag> = mutableListOf(),
 
-    /** 活动考察组安排列表，删除活动时级联删除对应考察组。 */
+    /** 活动考察组身份列表，删除活动时级联删除对应考察组。 */
     @OneToMany(mappedBy = "activity", cascade = [CascadeType.ALL], orphanRemoval = true)
     var inspectionTeamItemList: MutableList<InspectionTeamItem> = mutableListOf(),
 

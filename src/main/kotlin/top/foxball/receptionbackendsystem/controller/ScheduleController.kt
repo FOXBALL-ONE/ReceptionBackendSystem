@@ -11,7 +11,6 @@ import top.foxball.receptionbackendsystem.controller.request.LongIdRequest
 import top.foxball.receptionbackendsystem.controller.request.LongIdsRequest
 import top.foxball.receptionbackendsystem.controller.request.ScheduleSaveRequest
 import top.foxball.receptionbackendsystem.controller.request.ScheduleTagsRequest
-import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
 import top.foxball.receptionbackendsystem.service.ScheduleService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
@@ -28,21 +27,7 @@ class ScheduleController(
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val schedules = scheduleService.saveByActivity(activityId, request.schedules)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = schedules.map { schedule ->
-            Response(
-                id = schedule.id,
-                activityId = schedule.activity?.id,
-                scheduleTags = schedule.scheduleTags,
-                inspectionTeamItem = schedule.inspectionTeamItem,
-            )
-        }
+        val rs = schedules.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -51,42 +36,14 @@ class ScheduleController(
     fun saveOne(@RequestBody entity: Schedule): ResponseEntity<ApiResponse> {
         val schedule = scheduleService.saveOne(entity)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = Response(
-            id = schedule.id,
-            activityId = schedule.activity?.id,
-            scheduleTags = schedule.scheduleTags,
-            inspectionTeamItem = schedule.inspectionTeamItem,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(schedule.toResponse()).build()
     }
 
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<Schedule>): ResponseEntity<ApiResponse> {
         val schedules = scheduleService.saveBatch(request.items)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = schedules.map { schedule ->
-            Response(
-                id = schedule.id,
-                activityId = schedule.activity?.id,
-                scheduleTags = schedule.scheduleTags,
-                inspectionTeamItem = schedule.inspectionTeamItem,
-            )
-        }
+        val rs = schedules.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -95,42 +52,14 @@ class ScheduleController(
     fun updateOne(@RequestBody entity: Schedule): ResponseEntity<ApiResponse> {
         val schedule = scheduleService.updateOne(entity)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = Response(
-            id = schedule.id,
-            activityId = schedule.activity?.id,
-            scheduleTags = schedule.scheduleTags,
-            inspectionTeamItem = schedule.inspectionTeamItem,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(schedule.toResponse()).build()
     }
 
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<Schedule>): ResponseEntity<ApiResponse> {
         val schedules = scheduleService.updateBatch(request.items)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = schedules.map { schedule ->
-            Response(
-                id = schedule.id,
-                activityId = schedule.activity?.id,
-                scheduleTags = schedule.scheduleTags,
-                inspectionTeamItem = schedule.inspectionTeamItem,
-            )
-        }
+        val rs = schedules.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -148,21 +77,7 @@ class ScheduleController(
         val id = request.id ?: return badRequest("id is required")
         val schedule = scheduleService.findEntityById(id) ?: return notFound("entity not found")
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = Response(
-            id = schedule.id,
-            activityId = schedule.activity?.id,
-            scheduleTags = schedule.scheduleTags,
-            inspectionTeamItem = schedule.inspectionTeamItem,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(schedule.toResponse()).build()
     }
 
     @PostMapping("/find-by-activity-id")
@@ -170,21 +85,7 @@ class ScheduleController(
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val schedules = scheduleService.findByActivityId(activityId)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = schedules.map { schedule ->
-            Response(
-                id = schedule.id,
-                activityId = schedule.activity?.id,
-                scheduleTags = schedule.scheduleTags,
-                inspectionTeamItem = schedule.inspectionTeamItem,
-            )
-        }
+        val rs = schedules.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
@@ -195,22 +96,20 @@ class ScheduleController(
             ?: return badRequest("scheduleTags is required")
         val schedules = scheduleService.findByScheduleTagsContaining(scheduleTags)
 
-        data class Response(
-            val id: Long?,
-            val activityId: Long?,
-            val scheduleTags: String?,
-            val inspectionTeamItem: List<InspectionTeamItem>,
-        )
-
-        val rs = schedules.map { schedule ->
-            Response(
-                id = schedule.id,
-                activityId = schedule.activity?.id,
-                scheduleTags = schedule.scheduleTags,
-                inspectionTeamItem = schedule.inspectionTeamItem,
-            )
-        }
+        val rs = schedules.map { it.toResponse() }
 
         return builder.ok().data(rs).build()
     }
+
+    private fun Schedule.toResponse() = ScheduleResponse(
+        id = id,
+        activityId = activity?.id,
+        scheduleTags = scheduleTags,
+    )
+
+    private data class ScheduleResponse(
+        val id: Long?,
+        val activityId: Long?,
+        val scheduleTags: String?,
+    )
 }

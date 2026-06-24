@@ -2,6 +2,7 @@ package top.foxball.receptionbackendsystem.controller.request
 
 import top.foxball.receptionbackendsystem.datasource.jdbc.Car
 import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
+import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
 import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
@@ -85,6 +86,32 @@ data class ScheduleTagsRequest(
 data class ScheduleSaveRequest(
     val activityId: Long? = null,
     val schedules: List<Schedule> = emptyList(),
+)
+
+/**
+ * 考察组整体保存请求：考察组身份 + 其各天行程。
+ *
+ * 考察组 id 跨天唯一；每条行程以 [InspectionTeamItineraryDto.scheduleId] 指向已保存的日程天。
+ */
+data class InspectionTeamSaveRequest(
+    val activityId: Long? = null,
+    val items: List<InspectionTeamItemDto> = emptyList(),
+)
+
+data class InspectionTeamItemDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val itineraries: List<InspectionTeamItineraryDto> = emptyList(),
+)
+
+data class InspectionTeamItineraryDto(
+    val id: Long? = null,
+    /** 所属日程天 id，行程按天独立。 */
+    val scheduleId: Long? = null,
+    val routeUrl: String? = null,
+    val scheduleUrl: String? = null,
+    val routeNode: List<String> = emptyList(),
+    val eventArrangements: List<EventArrangementsItem> = emptyList(),
 )
 
 data class PersonSaveRequest(

@@ -13,6 +13,7 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.Image
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItinerary
 import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
 import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
 import top.foxball.receptionbackendsystem.datasource.jdbc.NoteItem
@@ -112,95 +113,111 @@ class MockDataInitializer(
             listOf(personBlueTag, personGreenTag, personPurpleTag, lodgingBlueTag, lodgingGreenTag, lodgingAmberTag),
         )
 
-        // ---------- 考察组：3 个，每个含 3 路线节点 + 2 事件安排 ----------
+        // ---------- 日程：3 天（天注册表，考察组跨天共用身份，各天行程独立） ----------
+        val day1 = Schedule(activity = activity, scheduleTags = "第一天,项目观摩,上午")
+        val day2 = Schedule(activity = activity, scheduleTags = "第二天,城市更新,全天")
+        val day3 = Schedule(activity = activity, scheduleTags = "第三天,民生服务,上午")
+        activity.schedules.addAll(listOf(day1, day2, day3))
+
+        // ---------- 考察组：3 个身份，每个绑定对应天的行程 ----------
         val projectTeam = InspectionTeamItem(
             activity = activity,
             name = "项目观摩组",
-            routeUrl = "/mock/routes/project-team.pdf",
-            scheduleUrl = "/mock/schedules/project-team.pdf",
-            routeNode = mutableListOf("政务中心", "智能制造园", "新能源基地", "项目展厅"),
-            eventArrangements = mutableListOf(
-                EventArrangementsItem(
-                    startTime = startTime.withHour(9).withMinute(30),
-                    endTime = startTime.withHour(10).withMinute(30),
-                    content = "听取重点项目建设情况汇报",
-                    location = "政务中心第一会议室",
-                ),
-                EventArrangementsItem(
-                    startTime = startTime.withHour(10).withMinute(45),
-                    endTime = startTime.withHour(12).withMinute(0),
-                    content = "观摩智能制造生产线",
-                    location = "智能制造园一号车间",
-                ),
-                EventArrangementsItem(
-                    startTime = startTime.withHour(14).withMinute(0),
-                    endTime = startTime.withHour(15).withMinute(30),
-                    content = "调研新能源基地储能项目",
-                    location = "新能源基地展厅",
+            itineraries = mutableListOf(
+                InspectionTeamItinerary(
+                    inspectionTeam = null,
+                    schedule = day1,
+                    routeUrl = "/mock/routes/project-team.pdf",
+                    scheduleUrl = "/mock/schedules/project-team.pdf",
+                    routeNode = mutableListOf("政务中心", "智能制造园", "新能源基地", "项目展厅"),
+                    eventArrangements = mutableListOf(
+                        EventArrangementsItem(
+                            startTime = startTime.withHour(9).withMinute(30),
+                            endTime = startTime.withHour(10).withMinute(30),
+                            content = "听取重点项目建设情况汇报",
+                            location = "政务中心第一会议室",
+                        ),
+                        EventArrangementsItem(
+                            startTime = startTime.withHour(10).withMinute(45),
+                            endTime = startTime.withHour(12).withMinute(0),
+                            content = "观摩智能制造生产线",
+                            location = "智能制造园一号车间",
+                        ),
+                        EventArrangementsItem(
+                            startTime = startTime.withHour(14).withMinute(0),
+                            endTime = startTime.withHour(15).withMinute(30),
+                            content = "调研新能源基地储能项目",
+                            location = "新能源基地展厅",
+                        ),
+                    ),
                 ),
             ),
-        )
+        ).also { team -> team.itineraries.forEach { it.inspectionTeam = team } }
 
         val cityTeam = InspectionTeamItem(
             activity = activity,
             name = "城市更新组",
-            routeUrl = "/mock/routes/city-team.pdf",
-            scheduleUrl = "/mock/schedules/city-team.pdf",
-            routeNode = mutableListOf("城市展馆", "更新示范街区", "公共服务中心"),
-            eventArrangements = mutableListOf(
-                EventArrangementsItem(
-                    startTime = startTime.plusDays(1).withHour(9).withMinute(0),
-                    endTime = startTime.plusDays(1).withHour(10).withMinute(30),
-                    content = "参观城市更新成果展",
-                    location = "城市展馆",
-                ),
-                EventArrangementsItem(
-                    startTime = startTime.plusDays(1).withHour(10).withMinute(45),
-                    endTime = startTime.plusDays(1).withHour(11).withMinute(45),
-                    content = "调研便民服务建设",
-                    location = "公共服务中心",
-                ),
-                EventArrangementsItem(
-                    startTime = startTime.plusDays(1).withHour(14).withMinute(30),
-                    endTime = startTime.plusDays(1).withHour(16).withMinute(0),
-                    content = "走访更新示范街区便民商户",
-                    location = "更新示范街区",
+            itineraries = mutableListOf(
+                InspectionTeamItinerary(
+                    inspectionTeam = null,
+                    schedule = day2,
+                    routeUrl = "/mock/routes/city-team.pdf",
+                    scheduleUrl = "/mock/schedules/city-team.pdf",
+                    routeNode = mutableListOf("城市展馆", "更新示范街区", "公共服务中心"),
+                    eventArrangements = mutableListOf(
+                        EventArrangementsItem(
+                            startTime = startTime.plusDays(1).withHour(9).withMinute(0),
+                            endTime = startTime.plusDays(1).withHour(10).withMinute(30),
+                            content = "参观城市更新成果展",
+                            location = "城市展馆",
+                        ),
+                        EventArrangementsItem(
+                            startTime = startTime.plusDays(1).withHour(10).withMinute(45),
+                            endTime = startTime.plusDays(1).withHour(11).withMinute(45),
+                            content = "调研便民服务建设",
+                            location = "公共服务中心",
+                        ),
+                        EventArrangementsItem(
+                            startTime = startTime.plusDays(1).withHour(14).withMinute(30),
+                            endTime = startTime.plusDays(1).withHour(16).withMinute(0),
+                            content = "走访更新示范街区便民商户",
+                            location = "更新示范街区",
+                        ),
+                    ),
                 ),
             ),
-        )
+        ).also { team -> team.itineraries.forEach { it.inspectionTeam = team } }
 
         val serviceTeam = InspectionTeamItem(
             activity = activity,
             name = "民生服务组",
-            routeUrl = "/mock/routes/service-team.pdf",
-            scheduleUrl = "/mock/schedules/service-team.pdf",
-            routeNode = mutableListOf("市民热线中心", "社区党群服务中心", "智慧城市运行大厅"),
-            eventArrangements = mutableListOf(
-                EventArrangementsItem(
-                    startTime = startTime.plusDays(2).withHour(9).withMinute(0),
-                    endTime = startTime.plusDays(2).withHour(10).withMinute(0),
-                    content = "了解市民热线接办流程",
-                    location = "市民热线中心",
-                ),
-                EventArrangementsItem(
-                    startTime = startTime.plusDays(2).withHour(10).withMinute(15),
-                    endTime = startTime.plusDays(2).withHour(11).withMinute(30),
-                    content = "观摩社区党群服务开展情况",
-                    location = "社区党群服务中心",
+            itineraries = mutableListOf(
+                InspectionTeamItinerary(
+                    inspectionTeam = null,
+                    schedule = day3,
+                    routeUrl = "/mock/routes/service-team.pdf",
+                    scheduleUrl = "/mock/schedules/service-team.pdf",
+                    routeNode = mutableListOf("市民热线中心", "社区党群服务中心", "智慧城市运行大厅"),
+                    eventArrangements = mutableListOf(
+                        EventArrangementsItem(
+                            startTime = startTime.plusDays(2).withHour(9).withMinute(0),
+                            endTime = startTime.plusDays(2).withHour(10).withMinute(0),
+                            content = "了解市民热线接办流程",
+                            location = "市民热线中心",
+                        ),
+                        EventArrangementsItem(
+                            startTime = startTime.plusDays(2).withHour(10).withMinute(15),
+                            endTime = startTime.plusDays(2).withHour(11).withMinute(30),
+                            content = "观摩社区党群服务开展情况",
+                            location = "社区党群服务中心",
+                        ),
+                    ),
                 ),
             ),
-        )
-        // 考察组只归属 activity，避免与 Schedule 集合重复持久化导致主键冲突。
-        activity.inspectionTeamItemList.addAll(listOf(projectTeam, cityTeam, serviceTeam))
+        ).also { team -> team.itineraries.forEach { it.inspectionTeam = team } }
 
-        // ---------- 日程：3 天 ----------
-        activity.schedules.addAll(
-            listOf(
-                Schedule(activity = activity, scheduleTags = "第一天,项目观摩,上午"),
-                Schedule(activity = activity, scheduleTags = "第二天,城市更新,全天"),
-                Schedule(activity = activity, scheduleTags = "第三天,民生服务,上午"),
-            ),
-        )
+        // 考察组身份只归属 activity，各天行程挂到具体天，避免与 Schedule 集合重复持久化。
+        activity.inspectionTeamItemList.addAll(listOf(projectTeam, cityTeam, serviceTeam))
 
         // ---------- 人员：6 个，分属 3 个 PERSON 标签，绑定考察组 id ----------
         val personA = Person(activity = activity, name = "张明", unit = "省发展改革委", nickName = "张主任", colorTag = personBlueTag)

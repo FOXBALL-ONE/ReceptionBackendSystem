@@ -63,9 +63,18 @@ class SiteApiController(
     ): SiteScheduleResponse {
         val activityId = resolveOpenActivity(activityUrl).requiredId()
         val schedules = scheduleService.findByActivityId(activityId)
+        // 考察组身份在活动级，行程按天分组：取当天各组的行程作为该天的分组安排。
+        val dayItinerariesByScheduleId = inspectionTeamService.findByActivityId(activityId)
+            .flatMap { team -> team.itineraries.map { team to it } }
+            .filter { it.second.schedule?.id != null }
+            .groupBy { it.second.schedule!!.id!! }
+
         return SiteScheduleResponse(
             days = schedules.mapIndexed { index, schedule ->
-                schedule.toSiteScheduleDay(index)
+                schedule.toSiteScheduleDay(
+                    index,
+                    itineraries = dayItinerariesByScheduleId[schedule.id].orEmpty(),
+                )
             },
         )
     }
@@ -240,15 +249,17 @@ class SiteApiController(
     private fun Activities.requiredId(): Long =
         id ?: throw ResourceNotFoundException("activity not found")
 
-    private fun Schedule.toSiteScheduleDay(index: Int): SiteScheduleDayResponse {
-        val groups = inspectionTeamItem
-            .takeIf { it.isNotEmpty() }
-            ?.mapIndexed { groupIndex, team -> team.toSiteScheduleGroup(groupIndex) }
-            ?: emptyList()
+    private fun Schedule.toSiteScheduleDay(
+        index: Int,
+        itineraries: List<Pair<InspectionTeamItem, InspectionTeamItinerary>>,
+    ): SiteScheduleDayResponse {
+        val groups = itineraries.mapIndexed { groupIndex, (team, itinerary) ->
+            itinerary.toSiteScheduleGroup(groupIndex, team.name)
+        }
 
         val meetings = groups.flatMap { it.meetings }
         return SiteScheduleDayResponse(
-            date = scheduleDateLabel(index, meetings),
+            date = scheduleDateLabel(index, itineraries, meetings),
             groups = groups,
             meetings = meetings,
         )
@@ -256,10 +267,11 @@ class SiteApiController(
 
     private fun Schedule.scheduleDateLabel(
         index: Int,
+        itineraries: List<Pair<InspectionTeamItem, InspectionTeamItinerary>>,
         meetings: List<SiteMeetingResponse>,
     ): String {
-        val firstMeetingTime = inspectionTeamItem
-            .flatMap { it.eventArrangements }
+        val firstMeetingTime = itineraries
+            .flatMap { it.second.eventArrangements }
             .mapNotNull { it.startTime }
             .minOrNull()
 
@@ -270,9 +282,12 @@ class SiteApiController(
         return firstTag(scheduleTags) ?: meetings.firstOrNull()?.time ?: "Day ${index + 1}"
     }
 
-    private fun InspectionTeamItem.toSiteScheduleGroup(index: Int): SiteScheduleGroupResponse =
+    private fun InspectionTeamItinerary.toSiteScheduleGroup(
+        index: Int,
+        teamName: String?,
+    ): SiteScheduleGroupResponse =
         SiteScheduleGroupResponse(
-            name = name ?: "Group ${index + 1}",
+            name = teamName ?: "Group ${index + 1}",
             mapImage = routeUrl?.takeIf { it.isLikelyImageUrl() },
             route = routeNode,
             meetings = eventArrangements
