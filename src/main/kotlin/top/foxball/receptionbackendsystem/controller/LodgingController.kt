@@ -1,5 +1,6 @@
 package top.foxball.receptionbackendsystem.controller
 
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -23,10 +24,37 @@ class LodgingController(
     private val lodgingService: LodgingService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    private val log = LoggerFactory.getLogger(this.javaClass)
+
     @PostMapping("/save")
     fun saveByActivity(@RequestBody request: LodgingSaveRequest): ResponseEntity<ApiResponse> {
-        val activityId = request.activityId ?: return badRequest("activityId is required")
+        log.info(
+            "收到住宿保存请求: activityId={}, colorTagCount={}, colorTagIds={}, lodgingCount={}, lodgingIds={}",
+            request.activityId,
+            request.colorTags.size,
+            request.colorTags.sampleColorTagIds(),
+            request.lodgings.size,
+            request.lodgings.sampleLodgingIds(),
+        )
+        val activityId = request.activityId
+        if (activityId == null) {
+            log.warn(
+                "住宿保存请求被拒绝: 缺少 activityId, colorTagCount={}, lodgingCount={}",
+                request.colorTags.size,
+                request.lodgings.size,
+            )
+            return badRequest("activityId is required")
+        }
+
         val result = lodgingService.saveByActivity(activityId, request.colorTags, request.lodgings)
+        log.info(
+            "住宿保存完成: activityId={}, savedColorTagCount={}, savedColorTagIds={}, savedLodgingCount={}, savedLodgingIds={}",
+            activityId,
+            result.colorTags.size,
+            result.colorTags.sampleColorTagIds(),
+            result.lodgings.size,
+            result.lodgings.sampleLodgingIds(),
+        )
 
         data class ColorTagResponse(
             val id: Int?,
@@ -215,8 +243,20 @@ class LodgingController(
 
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
-        val activityId = request.activityId ?: return badRequest("activityId is required")
+        log.info("收到住宿列表请求: activityId={}", request.activityId)
+        val activityId = request.activityId
+        if (activityId == null) {
+            log.warn("住宿列表请求被拒绝: 缺少 activityId")
+            return badRequest("activityId is required")
+        }
+
         val lodgings = lodgingService.findByActivityId(activityId)
+        log.info(
+            "住宿列表查询完成: activityId={}, lodgingCount={}, lodgingIds={}",
+            activityId,
+            lodgings.size,
+            lodgings.sampleLodgingIds(),
+        )
 
         data class Response(
             val id: Int?,
@@ -239,5 +279,15 @@ class LodgingController(
         }
 
         return builder.ok().data(rs).build()
+    }
+
+    private fun List<Lodging>.sampleLodgingIds(): List<Int?> =
+        take(LOG_SAMPLE_SIZE).map { it.id }
+
+    private fun List<ColorTag>.sampleColorTagIds(): List<Int?> =
+        take(LOG_SAMPLE_SIZE).map { it.id }
+
+    companion object {
+        private const val LOG_SAMPLE_SIZE = 10
     }
 }

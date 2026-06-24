@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
 import top.foxball.receptionbackendsystem.datasource.jdbc.*
+import top.foxball.receptionbackendsystem.handlder.ForbiddenException
 import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import top.foxball.receptionbackendsystem.service.*
 import java.time.LocalDateTime
@@ -60,7 +61,7 @@ class SiteApiController(
     fun schedule(
         @PathVariable(required = false) activityUrl: String?,
     ): SiteScheduleResponse {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         val schedules = scheduleService.findByActivityId(activityId)
         return SiteScheduleResponse(
             days = schedules.mapIndexed { index, schedule ->
@@ -73,7 +74,7 @@ class SiteApiController(
     fun people(
         @PathVariable(required = false) activityUrl: String?,
     ): List<SitePersonResponse> {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         val teamNames = inspectionTeamService.findByActivityId(activityId)
             .associate { it.id to it.name }
 
@@ -94,7 +95,7 @@ class SiteApiController(
     fun vehicles(
         @PathVariable(required = false) activityUrl: String?,
     ): List<SiteVehicleResponse> {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         return carService.findByActivityId(activityId).map { car ->
             SiteVehicleResponse(
                 id = car.carNumber ?: car.id?.toLong(),
@@ -118,7 +119,7 @@ class SiteApiController(
     fun meals(
         @PathVariable(required = false) activityUrl: String?,
     ): List<SiteMealResponse> {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         return mealService.findByActivityId(activityId).map { meal ->
             SiteMealResponse(
                 time = meal.time,
@@ -132,7 +133,7 @@ class SiteApiController(
     fun hotel(
         @PathVariable(required = false) activityUrl: String?,
     ): List<SiteHotelResponse> {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         return lodgingService.findByActivityId(activityId).map { lodging ->
             val colorTag = lodging.colorTag
             SiteHotelResponse(
@@ -149,7 +150,7 @@ class SiteApiController(
     fun sites(
         @PathVariable(required = false) activityUrl: String?,
     ): List<SiteInspectionPointResponse> {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         return inspectionPointService.findByActivityId(activityId).mapIndexed { index, point ->
             SiteInspectionPointResponse(
                 name = point.siteName(index),
@@ -163,7 +164,7 @@ class SiteApiController(
     fun service(
         @PathVariable(required = false) activityUrl: String?,
     ): SiteServiceResponse {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         val services = promptServiceService.findByActivityId(activityId)
         return SiteServiceResponse(
             staff = services.flatMap { prompt ->
@@ -205,7 +206,7 @@ class SiteApiController(
     fun overview(
         @PathVariable(required = false) activityUrl: String?,
     ): SiteOverviewResponse {
-        val activityId = resolveActivity(activityUrl).requiredId()
+        val activityId = resolveOpenActivity(activityUrl).requiredId()
         val overviews = overviewOfTheCityAndCountyService.findByActivityId(activityId)
         return SiteOverviewResponse(
             image = overviews.firstNotNullOfOrNull { it.topImageUrl },
@@ -226,6 +227,14 @@ class SiteApiController(
             activitiesService.findByUrl(normalizedUrl)
                 ?: throw ResourceNotFoundException("activity not found")
         }
+    }
+
+    private fun resolveOpenActivity(activityUrl: String?): Activities {
+        val activity = resolveActivity(activityUrl)
+        if (activity.isOpen != true) {
+            throw ForbiddenException("活动未开放")
+        }
+        return activity
     }
 
     private fun Activities.requiredId(): Long =

@@ -5,9 +5,48 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import top.foxball.receptionbackendsystem.datasource.jdbc.*
+import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
+import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
+import top.foxball.receptionbackendsystem.datasource.jdbc.Car
+import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
+import top.foxball.receptionbackendsystem.datasource.jdbc.EventArrangementsItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Image
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionPoint
+import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Lodging
+import top.foxball.receptionbackendsystem.datasource.jdbc.Meal
+import top.foxball.receptionbackendsystem.datasource.jdbc.NoteItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.OneStaff
+import top.foxball.receptionbackendsystem.datasource.jdbc.OverviewOfTheCityAndCounty
+import top.foxball.receptionbackendsystem.datasource.jdbc.ParagraphContentItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.PassengersOnBoardItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.Person
+import top.foxball.receptionbackendsystem.datasource.jdbc.PromptService
+import top.foxball.receptionbackendsystem.datasource.jdbc.Schedule
+import top.foxball.receptionbackendsystem.datasource.jdbc.StaffItem
+import top.foxball.receptionbackendsystem.datasource.jdbc.WeatherItem
 import java.time.LocalDateTime
 
+/**
+ * 接待活动模拟数据初始化器。
+ *
+ * 在应用就绪后向数据库写入一份完整的演示数据，覆盖活动及其全部子实体，
+ * 用于本地开发、接口联调和前端页面预览。已存在同 url 活动时跳过初始化。
+ *
+ * 实体关系与模拟规模概览：
+ * - Activities        ×1  聚合根，子实体全部通过 activity_id 关联并级联删除。
+ * - ColorTag          ×3 PERSON + ×3 LODGING，被 Person / Lodging 复用，PromptService 以色值引用。
+ * - Person            ×6  分属 3 个人员颜色标签，绑定考察组 id（松耦合，仅存 id）。
+ * - InspectionTeamItem×3  各含路线节点与事件安排；只归属 activity，避免与 Schedule 重复持久化。
+ * - Schedule          ×3  对应活动三天日程，考察组通过 activity 侧统一管理。
+ * - Car               ×3  各含随车人员值对象与乘客人员快照（jsonb）。
+ * - Meal              ×3  对应三天用餐安排。
+ * - Lodging           ×3  绑定住宿颜色标签与入住人员快照。
+ * - InspectionPoint   ×3  考察点位说明。
+ * - Image             ×3  banner / inspection / overview 三类图片元数据。
+ * - Overview          ×1  市县概况，含 3 段图文。
+ * - PromptService     ×1  含 3 组工作人员、3 条注意事项、3 条天气提示及出席说明。
+ */
 @Component
 class MockDataInitializer(
     private val activitiesRepository: ActivitiesRepository,
@@ -24,12 +63,20 @@ class MockDataInitializer(
         val savedActivity = activitiesRepository.saveAndFlush(activity)
 
         logger.info(
-            "Mock data initialized: activityId={}, url={}, schedules={}, persons={}, cars={}",
+            "Mock data initialized: activityId={}, url={}, colorTags={}, persons={}, inspectionTeams={}, schedules={}, cars={}, meals={}, lodgings={}, inspectionPoints={}, images={}, overviews={}, promptServices={}",
             savedActivity.id,
             savedActivity.url,
-            savedActivity.schedules.size,
+            savedActivity.colorTagList.size,
             savedActivity.personList.size,
+            savedActivity.inspectionTeamItemList.size,
+            savedActivity.schedules.size,
             savedActivity.carList.size,
+            savedActivity.mealList.size,
+            savedActivity.hostedList.size,
+            savedActivity.inspectionPoints.size,
+            savedActivity.imageList.size,
+            savedActivity.overviewOfTheCityAndCounty.size,
+            savedActivity.promptServiceList.size,
         )
     }
 
@@ -46,7 +93,7 @@ class MockDataInitializer(
             startTime = startTime,
             endTime = endTime,
             bannerTags = "重点项目,观摩调研,智慧接待",
-            bannerUrl = "/images/images/95ba8f70-36e8-4d7d-8fd4-a7d516c7cbfe.png",
+            bannerUrl = "/images/mock/reception/banner.jpg",
             isAnimation = true,
             isTopNavigationBar = true,
             icp = "京ICP备20260001号",
@@ -54,13 +101,18 @@ class MockDataInitializer(
             isOpen = true,
         )
 
+        // ---------- 颜色标签：3 PERSON + 3 LODGING ----------
         val personBlueTag = ColorTag(activity = activity, name = "综合协调组", color = "#2563EB", type = ColorTag.TYPE_PERSON)
         val personGreenTag = ColorTag(activity = activity, name = "现场保障组", color = "#16A34A", type = ColorTag.TYPE_PERSON)
+        val personPurpleTag = ColorTag(activity = activity, name = "会务讲解组", color = "#7C3AED", type = ColorTag.TYPE_PERSON)
         val lodgingBlueTag = ColorTag(activity = activity, name = "综合协调组", color = "#2563EB", type = ColorTag.TYPE_LODGING)
         val lodgingGreenTag = ColorTag(activity = activity, name = "现场保障组", color = "#16A34A", type = ColorTag.TYPE_LODGING)
-        val amberTag = ColorTag(activity = activity, name = "会务服务组", color = "#D97706", type = ColorTag.TYPE_LODGING)
-        activity.colorTagList.addAll(listOf(personBlueTag, personGreenTag, lodgingBlueTag, lodgingGreenTag, amberTag))
+        val lodgingAmberTag = ColorTag(activity = activity, name = "会务服务组", color = "#D97706", type = ColorTag.TYPE_LODGING)
+        activity.colorTagList.addAll(
+            listOf(personBlueTag, personGreenTag, personPurpleTag, lodgingBlueTag, lodgingGreenTag, lodgingAmberTag),
+        )
 
+        // ---------- 考察组：3 个，每个含 3 路线节点 + 2 事件安排 ----------
         val projectTeam = InspectionTeamItem(
             activity = activity,
             name = "项目观摩组",
@@ -78,7 +130,13 @@ class MockDataInitializer(
                     startTime = startTime.withHour(10).withMinute(45),
                     endTime = startTime.withHour(12).withMinute(0),
                     content = "观摩智能制造生产线",
-                    location = "智能制造园",
+                    location = "智能制造园一号车间",
+                ),
+                EventArrangementsItem(
+                    startTime = startTime.withHour(14).withMinute(0),
+                    endTime = startTime.withHour(15).withMinute(30),
+                    content = "调研新能源基地储能项目",
+                    location = "新能源基地展厅",
                 ),
             ),
         )
@@ -102,40 +160,67 @@ class MockDataInitializer(
                     content = "调研便民服务建设",
                     location = "公共服务中心",
                 ),
+                EventArrangementsItem(
+                    startTime = startTime.plusDays(1).withHour(14).withMinute(30),
+                    endTime = startTime.plusDays(1).withHour(16).withMinute(0),
+                    content = "走访更新示范街区便民商户",
+                    location = "更新示范街区",
+                ),
             ),
         )
 
-        activity.inspectionTeamItemList.addAll(listOf(projectTeam, cityTeam))
+        val serviceTeam = InspectionTeamItem(
+            activity = activity,
+            name = "民生服务组",
+            routeUrl = "/mock/routes/service-team.pdf",
+            scheduleUrl = "/mock/schedules/service-team.pdf",
+            routeNode = mutableListOf("市民热线中心", "社区党群服务中心", "智慧城市运行大厅"),
+            eventArrangements = mutableListOf(
+                EventArrangementsItem(
+                    startTime = startTime.plusDays(2).withHour(9).withMinute(0),
+                    endTime = startTime.plusDays(2).withHour(10).withMinute(0),
+                    content = "了解市民热线接办流程",
+                    location = "市民热线中心",
+                ),
+                EventArrangementsItem(
+                    startTime = startTime.plusDays(2).withHour(10).withMinute(15),
+                    endTime = startTime.plusDays(2).withHour(11).withMinute(30),
+                    content = "观摩社区党群服务开展情况",
+                    location = "社区党群服务中心",
+                ),
+            ),
+        )
+        // 考察组只归属 activity，避免与 Schedule 集合重复持久化导致主键冲突。
+        activity.inspectionTeamItemList.addAll(listOf(projectTeam, cityTeam, serviceTeam))
+
+        // ---------- 日程：3 天 ----------
         activity.schedules.addAll(
             listOf(
-                Schedule(
-                    activity = activity,
-                    scheduleTags = "第一天,项目观摩,上午",
-                    inspectionTeamItem = mutableListOf(projectTeam),
-                ),
-                Schedule(
-                    activity = activity,
-                    scheduleTags = "第二天,城市更新,上午",
-                    inspectionTeamItem = mutableListOf(cityTeam),
-                ),
-                Schedule(
-                    activity = activity,
-                    scheduleTags = "第三天,总结交流,下午",
-                ),
+                Schedule(activity = activity, scheduleTags = "第一天,项目观摩,上午"),
+                Schedule(activity = activity, scheduleTags = "第二天,城市更新,全天"),
+                Schedule(activity = activity, scheduleTags = "第三天,民生服务,上午"),
             ),
         )
 
+        // ---------- 人员：6 个，分属 3 个 PERSON 标签，绑定考察组 id ----------
         val personA = Person(activity = activity, name = "张明", unit = "省发展改革委", nickName = "张主任", colorTag = personBlueTag)
         val personB = Person(activity = activity, name = "李娜", unit = "省工业和信息化厅", nickName = "李处长", colorTag = personBlueTag)
         val personC = Person(activity = activity, name = "王强", unit = "市政府办公室", nickName = "王主任", colorTag = personGreenTag)
         val personD = Person(activity = activity, name = "赵琳", unit = "市招商服务中心", nickName = "赵经理", colorTag = personGreenTag)
-        activity.personList.addAll(listOf(personA, personB, personC, personD))
+        val personE = Person(activity = activity, name = "孙伟", unit = "市接待服务中心", nickName = "孙科长", colorTag = personPurpleTag)
+        val personF = Person(activity = activity, name = "周敏", unit = "市文化广电旅游局", nickName = "周讲解", colorTag = personPurpleTag)
+        activity.personList.addAll(listOf(personA, personB, personC, personD, personE, personF))
 
-        val personSnapshotA = personA.toJsonSnapshot()
-        val personSnapshotB = personB.toJsonSnapshot()
-        val personSnapshotC = personC.toJsonSnapshot()
-        val personSnapshotD = personD.toJsonSnapshot()
+        // 人员与考察组的关联通过 inspection_team_item_id 松耦合体现，由业务层在保存后按需回填，
+        // 此处仅准备人员快照，供车辆乘客名单与住宿记录引用。
+        val snapshotA = personA.toJsonSnapshot()
+        val snapshotB = personB.toJsonSnapshot()
+        val snapshotC = personC.toJsonSnapshot()
+        val snapshotD = personD.toJsonSnapshot()
+        val snapshotE = personE.toJsonSnapshot()
+        val snapshotF = personF.toJsonSnapshot()
 
+        // ---------- 车辆：3 辆，各含随车人员和乘客快照 ----------
         activity.carList.addAll(
             listOf(
                 Car(
@@ -148,7 +233,7 @@ class MockDataInitializer(
                         PassengersOnBoardItem(name = "随车联络员-刘洋", phone = "13900000001"),
                         PassengersOnBoardItem(name = "讲解员-周敏", phone = "13900000002"),
                     ),
-                    passengersList = mutableListOf(personSnapshotA, personSnapshotB),
+                    passengersList = mutableListOf(snapshotA, snapshotB),
                 ),
                 Car(
                     activity = activity,
@@ -158,101 +243,25 @@ class MockDataInitializer(
                     driverNumber = "13800000002",
                     passengersOnBoardList = mutableListOf(
                         PassengersOnBoardItem(name = "随车联络员-吴昊", phone = "13900000003"),
+                        PassengersOnBoardItem(name = "讲解员-韩雪", phone = "13900000004"),
                     ),
-                    passengersList = mutableListOf(personSnapshotC, personSnapshotD),
+                    passengersList = mutableListOf(snapshotC, snapshotD),
                 ),
-            ),
-        )
-
-        activity.imageList.addAll(
-            listOf(
-                Image(
+                Car(
                     activity = activity,
-                    originalFilename = "mock-banner.jpg",
-                    storedFilename = "mock-banner-2026.jpg",
-                    extension = "jpg",
-                    contentType = "image/jpeg",
-                    fileSize = 1_245_600L,
-                    width = 1920,
-                    height = 1080,
-                    sha256 = "0".repeat(64),
-                    bucket = "mock-images",
-                    objectKey = "mock/reception/banner.jpg",
-                    storagePath = "./images/mock/reception/banner.jpg",
-                    accessUrl = "/images/mock/reception/banner.jpg",
-                    uploadedBy = "mock",
-                    usageType = "banner",
-                    isDeleted = false,
-                    createdAt = now,
-                    updatedAt = now,
-                ),
-                Image(
-                    activity = activity,
-                    originalFilename = "mock-project.jpg",
-                    storedFilename = "mock-project-2026.jpg",
-                    extension = "jpg",
-                    contentType = "image/jpeg",
-                    fileSize = 982_300L,
-                    width = 1600,
-                    height = 900,
-                    sha256 = "1".repeat(64),
-                    bucket = "mock-images",
-                    objectKey = "mock/reception/project.jpg",
-                    storagePath = "./images/mock/reception/project.jpg",
-                    accessUrl = "/images/mock/reception/project.jpg",
-                    uploadedBy = "mock",
-                    usageType = "inspection",
-                    isDeleted = false,
-                    createdAt = now,
-                    updatedAt = now,
+                    carNumber = 3,
+                    carPlate = "京C·T2026",
+                    driver = "马师傅",
+                    driverNumber = "13800000003",
+                    passengersOnBoardList = mutableListOf(
+                        PassengersOnBoardItem(name = "随车联络员-林峰", phone = "13900000005"),
+                    ),
+                    passengersList = mutableListOf(snapshotE, snapshotF),
                 ),
             ),
         )
 
-        activity.promptServiceList.add(
-            PromptService(
-                activity = activity,
-                staffList = mutableListOf(
-                    StaffItem(
-                        name = "综合协调组",
-                        colorTag = personBlueTag.color,
-                        groupList = mutableListOf(
-                            OneStaff(name = "刘洋", duty = "总协调", phone = "13900000001"),
-                            OneStaff(name = "周敏", duty = "资料统筹", phone = "13900000002"),
-                        ),
-                    ),
-                    StaffItem(
-                        name = "现场保障组",
-                        colorTag = personGreenTag.color,
-                        groupList = mutableListOf(
-                            OneStaff(name = "吴昊", duty = "现场保障", phone = "13900000003"),
-                        ),
-                    ),
-                ),
-                noteList = mutableListOf(
-                    NoteItem(title = "集合提醒", content = "请各组提前15分钟到达指定集合点。", colorTag = amberTag.color),
-                    NoteItem(title = "资料准备", content = "讲解材料、车辆牌号和住宿信息已同步至接待页面。", colorTag = personBlueTag.color),
-                ),
-                weatherList = mutableListOf(
-                    WeatherItem(
-                        time = startTime,
-                        city = "北京市",
-                        temperature = "20°C - 28°C",
-                        weatherDescriptor = "晴",
-                    ),
-                    WeatherItem(
-                        time = startTime.plusDays(1),
-                        city = "北京市",
-                        temperature = "19°C - 27°C",
-                        weatherDescriptor = "多云",
-                    ),
-                ),
-                attendanceInstructionsMode = true,
-                attendanceInstructionsTitle = "出席说明",
-                attendanceInstructionsContent = "请参会人员按日程安排参加活动，如需调整车辆或住宿，请联系综合协调组。",
-            ),
-        )
-
+        // ---------- 用餐：3 餐 ----------
         activity.mealList.addAll(
             listOf(
                 Meal(
@@ -279,15 +288,16 @@ class MockDataInitializer(
             ),
         )
 
+        // ---------- 住宿：3 间，绑定 LODGING 标签与人员快照 ----------
         activity.hostedList.addAll(
             listOf(
-                Lodging(activity = activity, roomNumber = "1801", person = personSnapshotA, colorTag = lodgingBlueTag),
-                Lodging(activity = activity, roomNumber = "1802", person = personSnapshotB, colorTag = lodgingBlueTag),
-                Lodging(activity = activity, roomNumber = "1811", person = personSnapshotC, colorTag = lodgingGreenTag),
-                Lodging(activity = activity, roomNumber = "1812", person = personSnapshotD, colorTag = lodgingGreenTag),
+                Lodging(activity = activity, roomNumber = "1801", person = snapshotA, colorTag = lodgingBlueTag),
+                Lodging(activity = activity, roomNumber = "1802", person = snapshotB, colorTag = lodgingBlueTag),
+                Lodging(activity = activity, roomNumber = "1811", person = snapshotC, colorTag = lodgingGreenTag),
             ),
         )
 
+        // ---------- 考察点：3 个 ----------
         activity.inspectionPoints.addAll(
             listOf(
                 InspectionPoint(
@@ -308,6 +318,46 @@ class MockDataInitializer(
             ),
         )
 
+        // ---------- 图片：3 张（banner / inspection / overview） ----------
+        activity.imageList.addAll(
+            listOf(
+                mockImage(
+                    activity = activity,
+                    originalName = "mock-banner.jpg",
+                    storedName = "mock-banner-2026.jpg",
+                    width = 1920,
+                    height = 1080,
+                    size = 1_245_600L,
+                    objectKey = "mock/reception/banner.jpg",
+                    usageType = "banner",
+                    now = now,
+                ),
+                mockImage(
+                    activity = activity,
+                    originalName = "mock-project.jpg",
+                    storedName = "mock-project-2026.jpg",
+                    width = 1600,
+                    height = 900,
+                    size = 982_300L,
+                    objectKey = "mock/reception/project.jpg",
+                    usageType = "inspection",
+                    now = now,
+                ),
+                mockImage(
+                    activity = activity,
+                    originalName = "mock-overview.jpg",
+                    storedName = "mock-overview-2026.jpg",
+                    width = 1600,
+                    height = 900,
+                    size = 761_400L,
+                    objectKey = "mock/reception/overview.jpg",
+                    usageType = "overview",
+                    now = now,
+                ),
+            ),
+        )
+
+        // ---------- 市县概况：1 条，含 3 段 ----------
         activity.overviewOfTheCityAndCounty.add(
             OverviewOfTheCityAndCounty(
                 activity = activity,
@@ -330,7 +380,87 @@ class MockDataInitializer(
             ),
         )
 
+        // ---------- 提示服务：1 条，含 3 工作人员组 + 3 注意事项 + 3 天气 ----------
+        activity.promptServiceList.add(
+            PromptService(
+                activity = activity,
+                staffList = mutableListOf(
+                    StaffItem(
+                        name = "综合协调组",
+                        colorTag = personBlueTag.color,
+                        groupList = mutableListOf(
+                            OneStaff(name = "刘洋", duty = "总协调", phone = "13900000001"),
+                            OneStaff(name = "周敏", duty = "资料统筹", phone = "13900000002"),
+                        ),
+                    ),
+                    StaffItem(
+                        name = "现场保障组",
+                        colorTag = personGreenTag.color,
+                        groupList = mutableListOf(
+                            OneStaff(name = "吴昊", duty = "现场保障", phone = "13900000003"),
+                            OneStaff(name = "韩雪", duty = "车辆调度", phone = "13900000004"),
+                        ),
+                    ),
+                    StaffItem(
+                        name = "会务讲解组",
+                        colorTag = personPurpleTag.color,
+                        groupList = mutableListOf(
+                            OneStaff(name = "林峰", duty = "会务主持", phone = "13900000005"),
+                            OneStaff(name = "白璐", duty = "现场讲解", phone = "13900000006"),
+                        ),
+                    ),
+                ),
+                noteList = mutableListOf(
+                    NoteItem(title = "集合提醒", content = "请各组提前15分钟到达指定集合点。", colorTag = lodgingAmberTag.color),
+                    NoteItem(title = "资料准备", content = "讲解材料、车辆牌号和住宿信息已同步至接待页面。", colorTag = personBlueTag.color),
+                    NoteItem(title = "安全须知", content = "现场观摩请服从引导，注意生产区域安全标识。", colorTag = personGreenTag.color),
+                ),
+                weatherList = mutableListOf(
+                    WeatherItem(time = startTime, city = "北京市", temperature = "20°C - 28°C", weatherDescriptor = "晴"),
+                    WeatherItem(time = startTime.plusDays(1), city = "北京市", temperature = "19°C - 27°C", weatherDescriptor = "多云"),
+                    WeatherItem(time = startTime.plusDays(2), city = "北京市", temperature = "21°C - 29°C", weatherDescriptor = "晴转多云"),
+                ),
+                attendanceInstructionsMode = true,
+                attendanceInstructionsTitle = "出席说明",
+                attendanceInstructionsContent = "请参会人员按日程安排参加活动，如需调整车辆或住宿，请联系综合协调组。",
+            ),
+        )
+
         return activity
+    }
+
+    private fun mockImage(
+        activity: Activities,
+        originalName: String,
+        storedName: String,
+        width: Int,
+        height: Int,
+        size: Long,
+        objectKey: String,
+        usageType: String,
+        now: LocalDateTime,
+    ): Image {
+        val shaSeed = objectKey.hashCode().toString()
+        return Image(
+            activity = activity,
+            originalFilename = originalName,
+            storedFilename = storedName,
+            extension = "jpg",
+            contentType = "image/jpeg",
+            fileSize = size,
+            width = width,
+            height = height,
+            sha256 = shaSeed.padEnd(64, '0').take(64),
+            bucket = "mock-images",
+            objectKey = objectKey,
+            storagePath = "./images/$objectKey",
+            accessUrl = "/images/$objectKey",
+            uploadedBy = "mock",
+            usageType = usageType,
+            isDeleted = false,
+            createdAt = now,
+            updatedAt = now,
+        )
     }
 
     private fun Person.toJsonSnapshot(): Person =

@@ -7,6 +7,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 import top.foxball.receptionbackendsystem.datasource.jdbc.ActivitiesRepository
 import top.foxball.receptionbackendsystem.datasource.jdbc.ColorTag
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -29,8 +30,8 @@ class DataInitializerTest {
         val activity = activities.first()
 
         // 验证主活动信息
-        assertTrue(activity.name?.isNotEmpty() == true, "活动名称不应为空")
-        assertTrue(activity.url?.isNotEmpty() == true, "活动URL不应为空")
+        assertEquals(activity.name?.isNotEmpty(), true, "活动名称不应为空")
+        assertEquals(activity.url?.isNotEmpty(), true, "活动URL不应为空")
 
         // 验证附属记录
         assertTrue(activity.schedules.isNotEmpty(), "应该有日程记录")

@@ -1,5 +1,6 @@
 package top.foxball.receptionbackendsystem.controller
 
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -24,10 +25,29 @@ class PersonController(
     private val personService: PersonService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    private val log = LoggerFactory.getLogger(this.javaClass)
+
     @PostMapping("/save")
     fun saveByActivity(@RequestBody request: PersonSaveRequest): ResponseEntity<ApiResponse> {
-        val activityId = request.activityId ?: return badRequest("activityId is required")
+        log.info(
+            "收到人员保存请求: activityId={}, personCount={}, personIds={}",
+            request.activityId,
+            request.persons.size,
+            request.persons.sampleIds(),
+        )
+        val activityId = request.activityId
+        if (activityId == null) {
+            log.warn("人员保存请求被拒绝: 缺少 activityId, personCount={}", request.persons.size)
+            return badRequest("activityId is required")
+        }
+
         val persons = personService.saveByActivity(activityId, request.persons)
+        log.info(
+            "人员保存完成: activityId={}, savedPersonCount={}, savedPersonIds={}",
+            activityId,
+            persons.size,
+            persons.sampleIds(),
+        )
 
         data class Response(
             val id: Int?,
@@ -204,8 +224,20 @@ class PersonController(
 
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
-        val activityId = request.activityId ?: return badRequest("activityId is required")
+        log.info("收到人员列表请求: activityId={}", request.activityId)
+        val activityId = request.activityId
+        if (activityId == null) {
+            log.warn("人员列表请求被拒绝: 缺少 activityId")
+            return badRequest("activityId is required")
+        }
+
         val persons = personService.findByActivityId(activityId)
+        log.info(
+            "人员列表查询完成: activityId={}, personCount={}, personIds={}",
+            activityId,
+            persons.size,
+            persons.sampleIds(),
+        )
 
         data class Response(
             val id: Int?,
@@ -291,5 +323,12 @@ class PersonController(
         }
 
         return builder.ok().data(rs).build()
+    }
+
+    private fun List<Person>.sampleIds(): List<Int?> =
+        take(LOG_SAMPLE_SIZE).map { it.id }
+
+    companion object {
+        private const val LOG_SAMPLE_SIZE = 10
     }
 }
