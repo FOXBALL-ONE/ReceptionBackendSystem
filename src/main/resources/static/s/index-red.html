@@ -784,67 +784,71 @@ function rService(data) {
         <div style="text-align:center;font-size:22px;font-weight:800;color:var(--text);margin-bottom:40px">${esc(title)}</div>
         <div style="text-indent:2em;font-size:17px;color:var(--text2);line-height:1.6;white-space:pre-wrap;word-break:break-word;font-family:inherit">${esc(attendNotice)}</div>`);
     }
-    return sections.join('<br style="border:none;border-top:1px solid var(--bd);margin:14px 0">');
+  } else {
+
+    // 温馨提示
+    if (notices.length) {
+      sections.push(`
+        <div style="background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
+          <div style="background:var(--blue-grad-hd);padding:10px 14px;font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 512 512" class="ic" style="font-size:16px" fill="currentColor"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>
+            温馨提示
+          </div>
+          <div style="padding:14px">
+            ${notices.map((n, i) => `
+              <div style="${i > 0 ? 'margin-top:14px;padding-top:14px;border-top:1px dashed var(--bd);' : ''}">
+                ${n.title ? `<div style="font-size:16px;font-weight:700;color:var(--red-dk);margin-bottom:6px">${esc(n.title)}</div>` : ''}
+                <div style="font-size:16px;color:var(--text2);line-height:1.75;white-space:pre-wrap;word-break:break-word;font-family:inherit">${esc(n.content||'')}</div>
+              </div>`).join('')}
+          </div>
+        </div>`);
+    }
+    // 工作人员：使用表格样式展示
+    if (contactRows.length) {
+      sections.push(`
+        <div style="background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
+          <div style="background:var(--blue-grad-hd);padding:10px 14px;font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 512 512" class="ic" style="font-size:16px" fill="currentColor"><path d="M164.9 24.6c-7.7-18.6-28-28.5-47.4-23.2l-88 24C12.1 30.2 0 46 0 64C0 311.4 200.6 512 448 512c18 0 33.8-12.1 38.6-29.5l24-88c5.3-19.4-4.6-39.7-23.2-47.4l-96-40c-16.3-6.8-35.2-2.1-46.3 11.6L304.7 368C234.3 334.7 177.3 277.7 144 207.3L193.3 167c13.7-11.2 18.4-30 11.6-46.3l-40-96z"/></svg>
+            工作人员联系方式
+          </div>
+          <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:16px">
+            <thead>
+              <tr style="background:#fff1f2">
+                <th style="padding:10px 8px;border-bottom:2px solid var(--red-md);width:30%;color:var(--red-dk);font-weight:700;text-align:center">单位</th>
+                <th style="padding:10px 8px;border-bottom:2px solid var(--red-md);width:30%;color:var(--red-dk);font-weight:700;text-align:center">联系人</th>
+                <th style="padding:10px 8px;border-bottom:2px solid var(--red-md);width:40%;color:var(--red-dk);font-weight:700;text-align:center">电话号码</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${contactRows.map((row, idx) => `
+                <tr style="${idx < contactRows.length - 1 ? 'border-bottom:1px solid var(--bd)' : ''}">
+                  <td style="padding:10px 8px;text-align:center">${esc(row.unit)}</td>
+                  <td style="padding:10px 8px;text-align:center;word-break:break-word">${esc(row.name)}</td>
+                  <td style="padding:10px 8px;text-align:center;word-break:break-word">
+                    ${row.phone ? `<a href="tel:${telHref(row.phone)}" style="color:var(--red);text-decoration:none;font-weight:600">${esc(row.phone)}</a>` : ''}
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      `);
+    }
   }
 
-  // 温馨提示
-  if (notices.length) {
+  if (weather.length) {
     sections.push(`
       <div style="background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
         <div style="background:var(--blue-grad-hd);padding:10px 14px;font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px">
-          <svg viewBox="0 0 512 512" class="ic" style="font-size:16px" fill="currentColor"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>
-          温馨提示
+          <svg viewBox="0 0 640 512" class="ic" style="font-size:16px" fill="currentColor"><path d="M537.6 226.6C541.8 215.2 544 203 544 190.3C544 132.1 496.9 85 438.7 85C416.7 85 396.3 91.7 379.4 103.3C354.6 42.8 295.1 0 225.7 0C134.2 0 60 74.2 60 165.7C60 171.7 60.3 177.6 60.9 183.4C26 198.6 0 234 0 276.6C0 332.7 45.5 378.3 101.7 378.3H512C582.7 378.3 640 321 640 250.3C640 181.2 585.2 124.9 516.8 122.4C533.8 140.8 544 165.5 544 192C544 203.9 541.9 215.5 537.6 226.6zM208 432c0-8.8-7.2-16-16-16H144c-8.8 0-16 7.2-16 16s7.2 16 16 16h48c8.8 0 16-7.2 16-16zm160 0c0-8.8-7.2-16-16-16H304c-8.8 0-16 7.2-16 16s7.2 16 16 16h48c8.8 0 16-7.2 16-16zm-80 64c0-8.8-7.2-16-16-16H224c-8.8 0-16 7.2-16 16s7.2 16 16 16h48c8.8 0 16-7.2 16-16zm160 0c0-8.8-7.2-16-16-16H384c-8.8 0-16 7.2-16 16s7.2 16 16 16h48c8.8 0 16-7.2 16-16z"/></svg>
+          天气信息
         </div>
-        <div style="padding:14px">
-          ${notices.map((n, i) => `
-            <div style="${i > 0 ? 'margin-top:14px;padding-top:14px;border-top:1px dashed var(--bd);' : ''}">
-              ${n.title ? `<div style="font-size:16px;font-weight:700;color:var(--red-dk);margin-bottom:6px">${esc(n.title)}</div>` : ''}
-              <div style="font-size:16px;color:var(--text2);line-height:1.75;white-space:pre-wrap;word-break:break-word;font-family:inherit">${esc(n.content||'')}</div>
-            </div>`).join('')}
-        </div>
+        ${weather.map((w, i)=>`<div class="wx-row" style="${i < weather.length - 1 ? 'border-bottom:1px solid var(--bd)' : 'border-bottom:none'}">
+          <div style="flex-shrink:0"><div class="wx-date">${esc(w.date||'')}</div><div class="wx-city">${esc(w.city||'')}</div></div>
+          <div class="wx-desc" style="flex:1;text-align:center">${esc(w.desc||w.description||'')}</div>
+          <div class="wx-temp" style="flex-shrink:0">${esc(w.temp||'')}</div>
+        </div>`).join('')}
       </div>`);
   }
-  // 工作人员：使用表格样式展示
-  if (contactRows.length) {
-    sections.push(`
-      <div style="background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
-        <div style="background:var(--blue-grad-hd);padding:10px 14px;font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px">
-          <svg viewBox="0 0 512 512" class="ic" style="font-size:16px" fill="currentColor"><path d="M164.9 24.6c-7.7-18.6-28-28.5-47.4-23.2l-88 24C12.1 30.2 0 46 0 64C0 311.4 200.6 512 448 512c18 0 33.8-12.1 38.6-29.5l24-88c5.3-19.4-4.6-39.7-23.2-47.4l-96-40c-16.3-6.8-35.2-2.1-46.3 11.6L304.7 368C234.3 334.7 177.3 277.7 144 207.3L193.3 167c13.7-11.2 18.4-30 11.6-46.3l-40-96z"/></svg>
-          工作人员联系方式
-        </div>
-        <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:16px">
-          <thead>
-            <tr style="background:#fff1f2">
-              <th style="padding:10px 8px;border-bottom:2px solid var(--red-md);width:30%;color:var(--red-dk);font-weight:700;text-align:center">单位</th>
-              <th style="padding:10px 8px;border-bottom:2px solid var(--red-md);width:30%;color:var(--red-dk);font-weight:700;text-align:center">联系人</th>
-              <th style="padding:10px 8px;border-bottom:2px solid var(--red-md);width:40%;color:var(--red-dk);font-weight:700;text-align:center">电话号码</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${contactRows.map((row, idx) => `
-              <tr style="${idx < contactRows.length - 1 ? 'border-bottom:1px solid var(--bd)' : ''}">
-                <td style="padding:10px 8px;text-align:center">${esc(row.unit)}</td>
-                <td style="padding:10px 8px;text-align:center;word-break:break-word">${esc(row.name)}</td>
-                <td style="padding:10px 8px;text-align:center;word-break:break-word">
-                  ${row.phone ? `<a href="tel:${telHref(row.phone)}" style="color:var(--red);text-decoration:none;font-weight:600">${esc(row.phone)}</a>` : ''}
-                </td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    `);
-  }
-
-  // if (weather.length) {
-  //   sections.push(`
-  //     <div style="background:#fff;border-radius:var(--r);box-shadow:var(--sh);overflow:hidden">
-  //       ${weather.map(w=>`<div class="wx-row" style="border-bottom:none">
-  //         <div style="flex-shrink:0"><div class="wx-date">${w.date||''}</div><div class="wx-city">${w.city||''}</div></div>
-  //         <div class="wx-desc" style="flex:1;text-align:center">${w.desc||w.description||''}</div>
-  //         <div class="wx-temp" style="flex-shrink:0">${w.temp||''}</div>
-  //       </div>`).join('')}
-  //     </div>`);
-  // }
 
   return '' +
          sections.join('<br style="border:none;border-top:1px solid var(--bd);margin:14px 0">');
