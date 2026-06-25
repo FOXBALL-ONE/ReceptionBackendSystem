@@ -29,22 +29,11 @@ function getResponseMessage(response: ApiResult<unknown>) {
 }
 
 /**
- * 处理后端返回 401（未登录 / 会话过期）。
- *
- * 仅在客户端、且非 /auth/ 接口上触发：登录接口本身的 401 表示账密错误，交由调用方处理。
- * 清空本地登录态并跳转登录页，保留原路径以便登录后回跳。
+ * 处理后端返回 401（未登录 / 会话过期）：清空本地登录态并跳转登录页，保留原路径以便登录后回跳。
+ * 仅在客户端触发；供 useHttp 拦截器与绕过 useHttp 的直接请求（如文件下载）共用。
  */
-function redirectOnUnauthorized(error: unknown, url: string) {
+export function handleUnauthorized() {
     if (!import.meta.client) {
-        return;
-    }
-    if (url.startsWith("/auth/")) {
-        return;
-    }
-
-    const status = (error as { response?: { status?: number }; statusCode?: number })?.response?.status
-        ?? (error as { statusCode?: number })?.statusCode;
-    if (status !== 401) {
         return;
     }
 
@@ -60,8 +49,30 @@ function redirectOnUnauthorized(error: unknown, url: string) {
     }
 }
 
+/**
+ * 处理后端返回 401（未登录 / 会话过期）。
+ *
+ * 仅在客户端、且非 /auth/ 接口上触发：登录接口本身的 401 表示账密错误，交由调用方处理。
+ */
+function redirectOnUnauthorized(error: unknown, url: string) {
+    if (!import.meta.client) {
+        return;
+    }
+    if (url.startsWith("/auth/")) {
+        return;
+    }
+
+    const status = (error as { response?: { status?: number }; statusCode?: number })?.response?.status
+        ?? (error as { statusCode?: number })?.statusCode;
+    if (status !== 401) {
+        return;
+    }
+
+    handleUnauthorized();
+}
+
 /** 读取当前登录令牌，用于在每个请求上注入 Authorization 头；上下文不可用时返回 null。 */
-function readAuthToken(): string | null {
+export function readAuthToken(): string | null {
     try {
         return useAuthStore().token;
     } catch {

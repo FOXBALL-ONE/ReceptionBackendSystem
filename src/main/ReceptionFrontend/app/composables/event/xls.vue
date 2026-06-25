@@ -144,19 +144,11 @@ function isExcelFile(file: File) {
   return /\.(xlsx|xls)$/i.test(file.name)
 }
 
-function triggerDownload(url: string) {
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.style.display = 'none'
-  document.body.appendChild(anchor)
-  anchor.click()
-  document.body.removeChild(anchor)
-}
-
 async function downloadTemplate() {
   try {
     downloading.template = true
-    triggerDownload(eventApi.getExcelTemplateUrl())
+    const ok = await eventApi.downloadTemplate()
+    if (ok) message.success('模板下载成功')
   } catch (error: any) {
     message.error(error?.message || '模板下载失败')
   } finally {
@@ -171,7 +163,8 @@ async function downloadExport() {
   }
   try {
     downloading.exporting = true
-    triggerDownload(eventApi.getExcelExportUrl(eventId.value))
+    const ok = await eventApi.exportActivity(eventId.value)
+    if (ok) message.success('导出成功')
   } catch (error: any) {
     message.error(error?.message || '导出失败')
   } finally {

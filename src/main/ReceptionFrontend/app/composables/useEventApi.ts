@@ -1,3 +1,4 @@
+import { handleUnauthorized, readAuthToken } from '~/composables/useHttp'
 import type { Event, EventBasicPayload } from '~/types/event'
 
 export const useEventApi = () => {
@@ -8,6 +9,44 @@ export const useEventApi = () => {
     const numericId = Number(id)
 
     return Number.isFinite(numericId) ? numericId : id
+  }
+
+  /**
+   * 以带登录态的方式下载文件（blob）：注入 Authorization 头，401 时走统一的未登录处理。
+   * 用于绕过 useHttp 的二进制下载（如 Excel 导出 / 模板下载）。
+   */
+  const authenticatedDownload = async (url: string, filename: string): Promise<boolean> => {
+    const headers: Record<string, string> = {}
+    const token = readAuthToken()
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+    const res = await fetch(url, { headers })
+    if (res.status === 401) {
+      handleUnauthorized()
+      throw new Error('登录已过期，请重新登录')
+    }
+    const contentType = res.headers.get('content-type') || ''
+    if (!res.ok || contentType.includes('json')) {
+      let msg = `下载失败（${res.status}）`
+      try {
+        const data = await res.json()
+        msg = data?.message || data?.msg || data?.statusMessage || msg
+      } catch {
+        // 响应体无法解析为 JSON，沿用默认提示
+      }
+      throw new Error(msg)
+    }
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = objectUrl
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(objectUrl)
+    return true
   }
 
   const toBasicPayload = (data: EventBasicPayload): EventBasicPayload => ({
@@ -355,15 +394,30 @@ export const useEventApi = () => {
     },
 
     /**
-     * Excel 导入模板下载地址（GET，浏览器直接下载）
+     * Excel 导入模板下载地址（GET）
      */
     getExcelTemplateUrl: () => `${apiBase}/excel/template`,
 
     /**
-     * 某个活动的 Excel 导出地址（GET，浏览器直接下载）
+     * 下载空白导入模板（带登录态的 blob 下载）。
+     */
+    downloadTemplate: () =>
+      authenticatedDownload(`${apiBase}/excel/template`, '数字接待系统_导入模板.xlsx'),
+
+    /**
+     * 某个活动的 Excel 导出地址（GET）
      */
     getExcelExportUrl: (id: string | number) =>
       `${apiBase}/excel/export?id=${encodeURIComponent(String(normalizeId(id)))}`,
+
+    /**
+     * 导出某个活动为 Excel（带登录态、加载态与失败提示）。
+     */
+    exportActivity: (id: string | number) =>
+      authenticatedDownload(
+        `${apiBase}/excel/export?id=${encodeURIComponent(String(normalizeId(id)))}`,
+        '数字接待系统_数据导出.xlsx',
+      ),
 
     /**
      * 上传 Excel 并导入。传入 activityId 表示覆盖当前活动，否则创建新活动。

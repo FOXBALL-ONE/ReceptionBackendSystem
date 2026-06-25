@@ -1,17 +1,34 @@
 <template>
   <n-space vertical :size="16" class="event-page">
     <n-card :bordered="false">
-      <n-flex :size="10" wrap>
+      <div class="edit-toolbar">
+        <n-flex :size="10" wrap class="edit-tabs">
+          <n-button
+            v-for="tab in tabs"
+            :key="tab.key"
+            :type="activeTab === tab.key ? 'primary' : 'default'"
+            :secondary="activeTab !== tab.key"
+            @click="activeTab = tab.key"
+          >
+            {{ tab.label }}
+          </n-button>
+        </n-flex>
         <n-button
-          v-for="tab in tabs"
-          :key="tab.key"
-          :type="activeTab === tab.key ? 'primary' : 'default'"
-          :secondary="activeTab !== tab.key"
-          @click="activeTab = tab.key"
+          class="export-btn"
+          :loading="exporting"
+          :disabled="!eventId"
+          @click="handleExport"
         >
-          {{ tab.label }}
+          <template #icon>
+            <n-icon>
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+              </svg>
+            </n-icon>
+          </template>
+          导出 Excel
         </n-button>
-      </n-flex>
+      </div>
     </n-card>
 
     <component :is="activeComponent" />
@@ -33,6 +50,23 @@ import Xls from "~/composables/event/xls.vue";
 
 const route = useRoute();
 const eventId = computed(() => route.params.id as string);
+
+const eventApi = useEventApi();
+const message = useMessage();
+const exporting = ref(false);
+
+const handleExport = async () => {
+  if (!eventId.value) return;
+  try {
+    exporting.value = true;
+    const ok = await eventApi.exportActivity(eventId.value);
+    if (ok) message.success("导出成功");
+  } catch (error: any) {
+    message.error(error?.message || "导出失败");
+  } finally {
+    exporting.value = false;
+  }
+};
 
 const tabs = [
   { key: "basic", label: "基本", component: Basic },
@@ -61,5 +95,22 @@ provide('eventId', eventId);
 <style scoped>
 .event-page {
   width: 100%;
+}
+
+.edit-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.edit-tabs {
+  flex: 1;
+  min-width: 0;
+}
+
+.export-btn {
+  flex-shrink: 0;
 }
 </style>
