@@ -12,6 +12,7 @@ import top.foxball.receptionbackendsystem.datasource.excel.LodgingItem
 import top.foxball.receptionbackendsystem.datasource.excel.LodgingStaffExcelRow
 import top.foxball.receptionbackendsystem.datasource.excel.MealItem as ExcelMealItem
 import top.foxball.receptionbackendsystem.datasource.excel.OverviewOfTheCityAndCountyExcelRow
+import top.foxball.receptionbackendsystem.datasource.excel.OverviewOfTheCityAndCountyItem
 import top.foxball.receptionbackendsystem.datasource.excel.PersonnelItem
 import top.foxball.receptionbackendsystem.datasource.excel.ScheduleExcelRow
 import top.foxball.receptionbackendsystem.datasource.jdbc.Activities
@@ -58,6 +59,27 @@ class ExcelDatabaseExportService(
             writer.write(activity.toInspectionPointRows(), sheet(6, "考察点", InspectionPointsItem::class.java))
             writer.write(activity.toAttendanceGuidelineRows(), sheet(7, "参会须知", AttendanceGuidelinesItem::class.java))
             writer.write(activity.toOverviewRows(), sheet(8, "市县概况", OverviewOfTheCityAndCountyExcelRow::class.java))
+        }
+    }
+
+    /**
+     * 生成空白导入模板：仅写出 9 个 sheet 的表头。
+     *
+     * head 类与 [top.foxball.receptionbackendsystem.service.excel.ExcelDatabaseImportService] 各
+     * per-sheet 解析器读取的 head 类保持一致（注意「市县概况」使用导入侧的
+     * [OverviewOfTheCityAndCountyItem]，与导出侧的 ExcelRow 列结构不同），从而保证用户按模板填写后可被完整解析。
+     */
+    fun writeTemplate(outputStream: OutputStream) {
+        EasyExcel.write(outputStream).build().use { writer ->
+            writer.write(emptyList<PersonnelItem>(), sheet(0, "人员名单", PersonnelItem::class.java))
+            writer.write(emptyList<CarExcelRow>(), sheet(1, "乘车安排", CarExcelRow::class.java))
+            writer.write(emptyList<ExcelMealItem>(), sheet(2, "用餐安排", ExcelMealItem::class.java))
+            writer.write(emptyList<LodgingItem>(), sheet(3, "住宿安排", LodgingItem::class.java))
+            writer.write(emptyList<LodgingStaffExcelRow>(), sheet(4, "工作人员", LodgingStaffExcelRow::class.java))
+            writer.write(emptyList<ScheduleExcelRow>(), sheet(5, "日程安排", ScheduleExcelRow::class.java))
+            writer.write(emptyList<InspectionPointsItem>(), sheet(6, "考察点", InspectionPointsItem::class.java))
+            writer.write(emptyList<AttendanceGuidelinesItem>(), sheet(7, "参会须知", AttendanceGuidelinesItem::class.java))
+            writer.write(emptyList<OverviewOfTheCityAndCountyItem>(), sheet(8, "市县概况", OverviewOfTheCityAndCountyItem::class.java))
         }
     }
 

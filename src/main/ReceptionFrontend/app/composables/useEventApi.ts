@@ -2,6 +2,7 @@ import type { Event, EventBasicPayload } from '~/types/event'
 
 export const useEventApi = () => {
   const { post } = useHttp()
+  const apiBase = (useRuntimeConfig().public.apiBase as string) || 'http://127.0.0.1:8080/api'
 
   const normalizeId = (id: string | number) => {
     const numericId = Number(id)
@@ -347,6 +348,35 @@ export const useEventApi = () => {
         activityId: normalizeId(activityId),
         ...data,
       }, { payloadMode: 'json' })
+    },
+
+    /**
+     * Excel 导入模板下载地址（GET，浏览器直接下载）
+     */
+    getExcelTemplateUrl: () => `${apiBase}/excel/template`,
+
+    /**
+     * 某个活动的 Excel 导出地址（GET，浏览器直接下载）
+     */
+    getExcelExportUrl: (id: string | number) =>
+      `${apiBase}/excel/export?id=${encodeURIComponent(String(normalizeId(id)))}`,
+
+    /**
+     * 上传 Excel 并导入。传入 activityId 表示覆盖当前活动，否则创建新活动。
+     */
+    importExcel: async (
+      file: File,
+      options: { activityId?: string | number; name?: string } = {},
+    ) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      if (options.activityId !== undefined && options.activityId !== null) {
+        formData.append('activityId', String(normalizeId(options.activityId)))
+      }
+      if (options.name) {
+        formData.append('name', options.name)
+      }
+      return await post<any, FormData>('/excel/import', formData, { payloadMode: 'json' })
     },
   }
 }
