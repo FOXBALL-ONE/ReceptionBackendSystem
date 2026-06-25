@@ -1,15 +1,7 @@
 package top.foxball.receptionbackendsystem.datasource.jdbc
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
+import jakarta.persistence.*
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
 
@@ -20,7 +12,7 @@ import org.hibernate.annotations.OnDeleteAction
  */
 @Table(name = "inspection_point")
 @Entity
-data class InspectionPoint(
+class InspectionPoint(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -33,10 +25,10 @@ data class InspectionPoint(
     var activity: Activities? = null,
 
     /** 考察点图片地址。 */
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 1024)
     var imageURL: String? = null,
 
     /** 考察点说明。 */
-    @Column(name = "description")
+    @Column(name = "description", length = 10240)
     var description: String? = null,
 )

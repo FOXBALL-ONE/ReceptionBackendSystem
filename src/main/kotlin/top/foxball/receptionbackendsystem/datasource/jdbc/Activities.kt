@@ -46,7 +46,7 @@ data class Activities(
     var bannerTags: String? = null,
 
     /** Banner 图片地址。 */
-    @Column(name = "banner_url")
+    @Column(name = "banner_url", length = 10240)
     var bannerUrl: String? = null,
 
     /** 是否启用页面动画效果。 */
