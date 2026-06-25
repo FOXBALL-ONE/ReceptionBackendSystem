@@ -13,10 +13,6 @@
       </div>
     </n-card>
 
-    <n-alert v-if="saveStatus.message" :type="saveStatus.type" class="status-alert" :show-icon="false">
-      {{ saveStatus.message }}
-    </n-alert>
-
     <n-card title="天气情况" :bordered="false">
       <template #header-extra>
         <n-button type="primary" @click="addWeather">
@@ -193,11 +189,6 @@ interface PromptServicePayload {
   attendanceInstructionsContent?: string | null;
 }
 
-interface SaveStatus {
-  type: "success" | "warning" | "error" | "info";
-  message: string;
-}
-
 const idCounters = {
   group: 1,
   member: 1,
@@ -213,10 +204,6 @@ const conferenceNotice = ref<ConferenceNotice>({
 const weatherItems = ref<WeatherItem[]>([createWeatherItem()]);
 const staffGroups = ref<StaffGroup[]>([createStaffGroup("会务组")]);
 const warmTips = ref<WarmTip[]>([createWarmTip()]);
-const saveStatus = ref<SaveStatus>({
-  type: "info",
-  message: "",
-});
 const loading = ref(false);
 const saving = ref(false);
 const promptServiceId = ref<number | string | null>(null);
@@ -277,57 +264,46 @@ function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
 
 function addWeather() {
   weatherItems.value.push(createWeatherItem());
-  saveStatus.value.message = "";
 }
 
 function removeWeather(index: number) {
   weatherItems.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveWeather(index: number, offset: -1 | 1) {
   moveItem(weatherItems.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function addStaffGroup() {
   staffGroups.value.push(createStaffGroup(`分组 ${staffGroups.value.length + 1}`));
-  saveStatus.value.message = "";
 }
 
 function removeStaffGroup(index: number) {
   staffGroups.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveStaffGroup(index: number, offset: -1 | 1) {
   moveItem(staffGroups.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function addStaffMember(group: StaffGroup) {
   group.members.push(createStaffMember());
-  saveStatus.value.message = "";
 }
 
 function removeStaffMember(group: StaffGroup, index: number) {
   group.members.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function addWarmTip() {
   warmTips.value.push(createWarmTip());
-  saveStatus.value.message = "";
 }
 
 function removeWarmTip(index: number) {
   warmTips.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveWarmTip(index: number, offset: -1 | 1) {
   moveItem(warmTips.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function getWeatherSummary(weather: WeatherItem) {
@@ -510,26 +486,17 @@ function buildSavePayload() {
 
 async function saveWarmService() {
   if (!eventId?.value) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先选择活动",
-    };
+    message.warning("请先选择活动");
     return;
   }
 
   if (!isStaffTipsMode.value && !conferenceNotice.value.title.trim() && !conferenceNotice.value.content.trim()) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先填写参会须知",
-    };
+    message.warning("请先填写参会须知");
     return;
   }
 
   if (isStaffTipsMode.value && staffGroups.value.length === 0 && warmTips.value.length === 0) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先填写工作人员或温馨提示",
-    };
+    message.warning("请先填写工作人员或温馨提示");
     return;
   }
 
@@ -540,15 +507,9 @@ async function saveWarmService() {
     // 调用 prompt-services 接口
     await eventApi.savePromptService(eventId.value, payload);
 
-    saveStatus.value = {
-      type: "success",
-      message: `${activeModeLabel.value}已保存`,
-    };
+    message.success(`${activeModeLabel.value}已保存`);
   } catch (error: any) {
-    saveStatus.value = {
-      type: "error",
-      message: error.message || "保存失败",
-    };
+    message.error(error.message || "保存失败");
   } finally {
     saving.value = false;
   }
@@ -607,10 +568,6 @@ watch(() => eventId?.value, (newId) => {
 
 .mode-option.active {
   color: #175cd3;
-}
-
-.status-alert {
-  margin-bottom: -4px;
 }
 
 .item-panel {

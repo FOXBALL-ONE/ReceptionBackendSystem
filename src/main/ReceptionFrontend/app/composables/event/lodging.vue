@@ -47,10 +47,6 @@
         {{ peopleError }}
       </n-alert>
 
-      <n-alert v-if="saveStatus.message" :type="saveStatus.type" class="status-alert" :show-icon="false">
-        {{ saveStatus.message }}
-      </n-alert>
-
       <div class="person-toolbar">
         <n-select
           v-model:value="pendingPersonId"
@@ -185,11 +181,6 @@ interface LodgingRecord {
   typeId: string | null;
 }
 
-interface SaveStatus {
-  type: "success" | "warning" | "error" | "info";
-  message: string;
-}
-
 type RawPerson = {
   id?: string | number;
   value?: string | number;
@@ -233,10 +224,6 @@ const peopleError = ref("");
 const pendingPersonId = ref<string | null>(null);
 const lodgings = ref<LodgingRecord[]>([createLodging()]);
 const deletedPersonTypeIds = ref<number[]>([]);
-const saveStatus = ref<SaveStatus>({
-  type: "info",
-  message: "",
-});
 const loading = ref(false);
 const saving = ref(false);
 
@@ -325,7 +312,6 @@ function removePersonType(typeId: string) {
 
 function addLodging() {
   lodgings.value.push(createLodging());
-  saveStatus.value.message = "";
 }
 
 function addFromPerson() {
@@ -341,12 +327,10 @@ function addFromPerson() {
     name: person.name,
   }));
   pendingPersonId.value = null;
-  saveStatus.value.message = "";
 }
 
 function removeLodging(index: number) {
   lodgings.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
@@ -361,7 +345,6 @@ function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
 
 function moveLodging(index: number, offset: -1 | 1) {
   moveItem(lodgings.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function getPersonType(typeId: string | null) {
@@ -543,7 +526,6 @@ const loadLodgingData = async () => {
 
     const loadedLodgings = normalizeLodgings(lodgingsResponse)
     lodgings.value = loadedLodgings.length > 0 ? loadedLodgings : [createLodging()]
-    saveStatus.value.message = ""
   } catch (error: any) {
     message.error(error.message || '加载住宿数据失败')
     lodgings.value = [createLodging()]
@@ -627,10 +609,7 @@ async function deleteRemovedPersonTypes() {
 
 async function saveLodgings() {
   if (!eventId?.value) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先选择活动",
-    };
+    message.warning("请先选择活动");
     return;
   }
 
@@ -642,15 +621,9 @@ async function saveLodgings() {
     await deleteRemovedPersonTypes();
 
     await loadLodgingData();
-    saveStatus.value = {
-      type: "success",
-      message: "住宿安排已保存",
-    };
+    message.success("住宿安排已保存");
   } catch (error: any) {
-    saveStatus.value = {
-      type: "error",
-      message: error.message || "住宿安排保存失败",
-    };
+    message.error(error.message || "住宿安排保存失败");
   } finally {
     saving.value = false;
   }

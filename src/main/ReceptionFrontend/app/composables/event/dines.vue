@@ -10,10 +10,6 @@
         </n-button>
       </template>
 
-      <n-alert v-if="saveStatus.message" :type="saveStatus.type" class="status-alert" :show-icon="false">
-        {{ saveStatus.message }}
-      </n-alert>
-
       <n-empty v-if="meals.length === 0" description="暂无用餐安排">
         <template #extra>
           <n-button type="primary" @click="addMeal">添加用餐</n-button>
@@ -113,20 +109,11 @@ interface MealArrangement {
   description: string;
 }
 
-interface SaveStatus {
-  type: "success" | "warning" | "error" | "info";
-  message: string;
-}
-
 const idCounters = {
   meal: 1,
 };
 
 const meals = ref<MealArrangement[]>([]);
-const saveStatus = ref<SaveStatus>({
-  type: "info",
-  message: "",
-});
 const loading = ref(false);
 const saving = ref(false);
 
@@ -150,12 +137,10 @@ function createMeal(values: Partial<Omit<MealArrangement, "id">> = {}): MealArra
 
 function addMeal() {
   meals.value.push(createMeal());
-  saveStatus.value.message = "";
 }
 
 function removeMeal(index: number) {
   meals.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
@@ -170,7 +155,6 @@ function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
 
 function moveMeal(index: number, offset: -1 | 1) {
   moveItem(meals.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function getMealSummary(meal: MealArrangement) {
@@ -297,7 +281,6 @@ const loadMealsData = async () => {
       position: meal.position || '',
       description: meal.description || '',
     }))
-    saveStatus.value.message = ''
   } catch (error: any) {
     message.error(error.message || '加载用餐数据失败')
     meals.value = []
@@ -308,15 +291,11 @@ const loadMealsData = async () => {
 
 async function saveMeals() {
   if (!eventId?.value) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先选择活动",
-    };
+    message.warning("请先选择活动");
     return;
   }
 
   saving.value = true;
-  saveStatus.value = { type: "info", message: "" };
 
   try {
     const mealPayload = buildMealPayload();
@@ -324,15 +303,9 @@ async function saveMeals() {
 
     await loadMealsData()
 
-    saveStatus.value = {
-      type: "success",
-      message: "用餐安排已保存",
-    };
+    message.success("用餐安排已保存");
   } catch (error: any) {
-    saveStatus.value = {
-      type: "error",
-      message: error.message || "用餐安排保存失败",
-    };
+    message.error(error.message || "用餐安排保存失败");
   } finally {
     saving.value = false;
   }
@@ -356,10 +329,6 @@ watch(() => eventId?.value, (newId) => {
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-}
-
-.status-alert {
-  margin-bottom: 12px;
 }
 
 .meal-panel {

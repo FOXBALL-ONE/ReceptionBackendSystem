@@ -17,10 +17,6 @@
         {{ peopleError }}
       </n-alert>
 
-      <n-alert v-if="saveStatus.message" :type="saveStatus.type" class="status-alert" :show-icon="false">
-        {{ saveStatus.message }}
-      </n-alert>
-
       <n-empty v-if="vehicles.length === 0" description="暂无车辆安排">
         <template #extra>
           <n-button type="primary" @click="addVehicle">添加车辆</n-button>
@@ -202,11 +198,6 @@ interface VehicleArrangement {
   pendingPassengerId: string | null;
 }
 
-interface SaveStatus {
-  type: "success" | "warning" | "error" | "info";
-  message: string;
-}
-
 type RawPerson = {
   id?: string | number;
   value?: string | number;
@@ -245,10 +236,6 @@ const people = ref<PersonOption[]>([]);
 const peopleLoading = ref(false);
 const peopleError = ref("");
 const saving = ref(false);
-const saveStatus = ref<SaveStatus>({
-  type: "info",
-  message: "",
-});
 const vehicles = ref<VehicleArrangement[]>([createVehicle()]);
 
 const personMap = computed(() => new Map(people.value.map((person) => [person.id, person])));
@@ -546,33 +533,20 @@ function buildSavePayload() {
 
 async function saveCarArrangements() {
   if (!eventId?.value) {
-    saveStatus.value = {
-      type: 'warning',
-      message: '请先选择活动',
-    };
+    message.warning('请先选择活动');
     return;
   }
 
   saving.value = true;
-  saveStatus.value = {
-    type: "info",
-    message: "",
-  };
 
   try {
     const payload = buildSavePayload();
     await eventApi.saveCars(eventId.value, payload.vehicles);
 
     await loadCarData();
-    saveStatus.value = {
-      type: "success",
-      message: "乘车安排已保存",
-    };
+    message.success('乘车安排已保存');
   } catch (error) {
-    saveStatus.value = {
-      type: "error",
-      message: getErrorMessage(error, "乘车安排保存失败"),
-    };
+    message.error(getErrorMessage(error, '乘车安排保存失败'));
   } finally {
     saving.value = false;
   }

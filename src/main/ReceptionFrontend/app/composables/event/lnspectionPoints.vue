@@ -10,10 +10,6 @@
         </n-button>
       </template>
 
-      <n-alert v-if="saveStatus.message" :type="saveStatus.type" class="status-alert" :show-icon="false">
-        {{ saveStatus.message }}
-      </n-alert>
-
       <n-spin :show="loading">
         <n-empty v-if="inspectionPoints.length === 0" description="暂无考察点">
           <template #extra>
@@ -134,11 +130,6 @@ interface InspectionPoint {
   localFile: File | null;
 }
 
-interface SaveStatus {
-  type: "success" | "warning" | "error" | "info";
-  message: string;
-}
-
 const idCounters = {
   point: 1,
 };
@@ -146,10 +137,6 @@ const idCounters = {
 const objectUrls = new Set<string>();
 
 const inspectionPoints = ref<InspectionPoint[]>([createInspectionPoint()]);
-const saveStatus = ref<SaveStatus>({
-  type: "info",
-  message: "",
-});
 const loading = ref(false);
 const saving = ref(false);
 
@@ -173,13 +160,11 @@ function createInspectionPoint(values: Partial<Omit<InspectionPoint, "id">> = {}
 
 function addInspectionPoint() {
   inspectionPoints.value.push(createInspectionPoint());
-  saveStatus.value.message = "";
 }
 
 function removeInspectionPoint(index: number) {
   cleanupPointUrl(inspectionPoints.value[index]);
   inspectionPoints.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
@@ -194,7 +179,6 @@ function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
 
 function moveInspectionPoint(index: number, offset: -1 | 1) {
   moveItem(inspectionPoints.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function getInspectionSummary(point: InspectionPoint) {
@@ -297,14 +281,12 @@ function handleLocalImageChange(event: Event, point: InspectionPoint) {
   point.imageUrl = url;
   point.localFile = file;
   input.value = "";
-  saveStatus.value.message = "";
 }
 
 function removePointImage(point: InspectionPoint) {
   revokeObjectUrl(point.imageUrl);
   point.imageUrl = "";
   point.localFile = null;
-  saveStatus.value.message = "";
 }
 
 async function uploadPendingPointImages() {
@@ -359,7 +341,6 @@ async function loadInspectionPointsData() {
     const loadedPoints = normalizeInspectionPoints(response)
 
     inspectionPoints.value = loadedPoints.length > 0 ? loadedPoints : [createInspectionPoint()]
-    saveStatus.value.message = ""
   } catch (error) {
     message.error(getErrorMessage(error, "加载考察点数据失败"))
     inspectionPoints.value = [createInspectionPoint()]
@@ -370,31 +351,21 @@ async function loadInspectionPointsData() {
 
 async function saveInspectionPoints() {
   if (!eventId?.value) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先选择活动",
-    };
+    message.warning("请先选择活动");
     return;
   }
 
   try {
     saving.value = true
-    saveStatus.value = { type: "info", message: "" }
 
     await uploadPendingPointImages()
     const payload = buildSavePayload();
     await eventApi.saveInspectionPoints(eventId.value, payload.inspectionPoints)
     await loadInspectionPointsData()
 
-    saveStatus.value = {
-      type: "success",
-      message: "考察点已保存",
-    };
+    message.success("考察点已保存");
   } catch (error) {
-    saveStatus.value = {
-      type: "error",
-      message: getErrorMessage(error, "考察点保存失败"),
-    };
+    message.error(getErrorMessage(error, "考察点保存失败"));
   } finally {
     saving.value = false
   }
@@ -427,10 +398,6 @@ onBeforeUnmount(() => {
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-}
-
-.status-alert {
-  margin-bottom: 12px;
 }
 
 .inspection-panel {

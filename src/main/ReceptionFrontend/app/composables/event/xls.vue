@@ -67,10 +67,6 @@
       </n-space>
     </n-card>
 
-    <n-alert v-if="status.message" :type="status.type" :show-icon="true">
-      {{ status.message }}
-    </n-alert>
-
     <n-card v-if="result" title="导入结果" :bordered="false">
       <n-space vertical :size="12">
         <n-space :size="8" wrap>
@@ -115,18 +111,12 @@ interface ExcelImportResult {
   overviewCount: number
 }
 
-interface StatusMessage {
-  type: 'success' | 'warning' | 'error' | 'info'
-  message: string
-}
-
 type ImportMode = 'new' | 'overwrite'
 
 const importMode = ref<ImportMode>('new')
 const selectedFile = ref<File | null>(null)
 const importing = ref(false)
 const result = ref<ExcelImportResult | null>(null)
-const status = ref<StatusMessage>({ type: 'info', message: '' })
 const downloading = reactive({ template: false, exporting: false })
 
 const resultTags = computed(() => {
@@ -148,7 +138,6 @@ const resultTags = computed(() => {
 function onUploadChange(options: { file: UploadFileInfo }) {
   const file = options.file?.file ?? null
   selectedFile.value = file
-  status.value.message = ''
 }
 
 function isExcelFile(file: File) {
@@ -227,29 +216,23 @@ async function doImport() {
 
   try {
     importing.value = true
-    status.value = { type: 'info', message: '' }
 
     const data = await eventApi.importExcel(file, {
       activityId: overwrite && eventId?.value ? eventId.value : undefined,
     }) as ExcelImportResult
 
     result.value = data
-    status.value = {
-      type: 'success',
-      message: overwrite
+    message.success(
+      overwrite
         ? `已覆盖当前活动数据（新活动 ID：${data.activityId ?? '-'}）`
         : `已创建新活动（ID：${data.activityId ?? '-'}）`,
-    }
-    message.success('导入成功')
+    )
 
     if (overwrite && data.activityId) {
       await navigateTo(`/event/${data.activityId}`)
     }
   } catch (error: any) {
-    status.value = {
-      type: 'error',
-      message: error?.message || '导入失败，请检查文件格式是否与模板一致',
-    }
+    message.error(error?.message || '导入失败，请检查文件格式是否与模板一致')
   } finally {
     importing.value = false
   }
@@ -265,7 +248,6 @@ function openImportedActivity() {
 function resetImport() {
   result.value = null
   selectedFile.value = null
-  status.value = { type: 'info', message: '' }
 }
 </script>
 

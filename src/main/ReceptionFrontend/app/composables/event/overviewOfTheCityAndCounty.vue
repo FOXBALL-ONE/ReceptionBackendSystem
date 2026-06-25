@@ -2,10 +2,6 @@
   <n-spin :show="loading">
     <n-space vertical :size="16" class="overview-editor">
     <n-card title="市县概况" :bordered="false">
-      <n-alert v-if="saveStatus.message" :type="saveStatus.type" class="status-alert" :show-icon="false">
-        {{ saveStatus.message }}
-      </n-alert>
-
       <n-form label-placement="top" :show-feedback="false">
         <n-grid cols="1 m:2" :x-gap="16" :y-gap="14" responsive="screen">
           <n-form-item-gi label="标题">
@@ -158,11 +154,6 @@ interface OverviewPayload {
   }> | null;
 }
 
-interface SaveStatus {
-  type: "success" | "warning" | "error" | "info";
-  message: string;
-}
-
 const idCounters = {
   paragraph: 1,
 };
@@ -178,10 +169,6 @@ const overviewId = ref<number | string | null>(null);
 const loading = ref(false);
 const saving = ref(false);
 const uploading = ref(false);
-const saveStatus = ref<SaveStatus>({
-  type: "info",
-  message: "",
-});
 
 function nextId(prefix: keyof typeof idCounters) {
   const nextValue = idCounters[prefix];
@@ -209,12 +196,10 @@ function resetOverviewState() {
 
 function addParagraph() {
   paragraphs.value.push(createParagraph());
-  saveStatus.value.message = "";
 }
 
 function removeParagraph(index: number) {
   paragraphs.value.splice(index, 1);
-  saveStatus.value.message = "";
 }
 
 function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
@@ -229,7 +214,6 @@ function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
 
 function moveParagraph(index: number, offset: -1 | 1) {
   moveItem(paragraphs.value, index, offset);
-  saveStatus.value.message = "";
 }
 
 function getParagraphSummary(paragraph: OverviewParagraph) {
@@ -302,10 +286,7 @@ async function handleHeroImageChange(event: Event) {
 
   if (!eventId?.value) {
     input.value = "";
-    saveStatus.value = {
-      type: "warning",
-      message: "请先选择活动",
-    };
+    message.warning("请先选择活动");
     return;
   }
 
@@ -315,22 +296,15 @@ async function handleHeroImageChange(event: Event) {
     const uploadedUrl = pickUploadUrl(response);
 
     if (!uploadedUrl) {
-      saveStatus.value = {
-        type: "warning",
-        message: "图片已上传，但接口未返回访问地址",
-      };
+      message.warning("图片已上传，但接口未返回访问地址");
       return;
     }
 
     revokeObjectUrl(overview.value.heroImageUrl);
     overview.value.heroImageUrl = uploadedUrl;
-    saveStatus.value.message = "";
     message.success("顶部图片上传成功");
   } catch (error: unknown) {
-    saveStatus.value = {
-      type: "error",
-      message: getErrorMessage(error, "顶部图片上传失败"),
-    };
+    message.error(getErrorMessage(error, "顶部图片上传失败"));
   } finally {
     uploading.value = false;
     input.value = "";
@@ -340,7 +314,6 @@ async function handleHeroImageChange(event: Event) {
 function removeHeroImage() {
   revokeObjectUrl(overview.value.heroImageUrl);
   overview.value.heroImageUrl = "";
-  saveStatus.value.message = "";
 }
 
 function pickOverview(response: unknown): OverviewPayload | null {
@@ -418,10 +391,7 @@ async function loadOverviewData() {
     assignOverview(pickOverview(data));
   } catch (error: unknown) {
     resetOverviewState();
-    saveStatus.value = {
-      type: "error",
-      message: getErrorMessage(error, "加载市县概况失败"),
-    };
+    message.error(getErrorMessage(error, "加载市县概况失败"));
   } finally {
     loading.value = false;
   }
@@ -429,18 +399,12 @@ async function loadOverviewData() {
 
 async function saveOverview() {
   if (!eventId?.value) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先选择活动",
-    };
+    message.warning("请先选择活动");
     return;
   }
 
   if (!hasOverviewContent()) {
-    saveStatus.value = {
-      type: "warning",
-      message: "请先填写概况内容",
-    };
+    message.warning("请先填写概况内容");
     return;
   }
 
@@ -454,15 +418,9 @@ async function saveOverview() {
       overviewId.value = savedOverview.id;
     }
 
-    saveStatus.value = {
-      type: "success",
-      message: "市县概况已保存",
-    };
+    message.success("市县概况已保存");
   } catch (error: unknown) {
-    saveStatus.value = {
-      type: "error",
-      message: getErrorMessage(error, "保存市县概况失败"),
-    };
+    message.error(getErrorMessage(error, "保存市县概况失败"));
   } finally {
     saving.value = false;
   }
@@ -491,10 +449,6 @@ onBeforeUnmount(() => {
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-}
-
-.status-alert {
-  margin-bottom: 12px;
 }
 
 .image-url-control {
