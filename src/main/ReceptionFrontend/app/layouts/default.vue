@@ -39,6 +39,14 @@
                     </n-icon>
                     <span>活动配置</span>
                   </NuxtLink>
+                  <NuxtLink to="/excel" class="app-nav-link">
+                    <n-icon size="18" class="nav-icon">
+                      <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-3.7 4.7L11 15.4V11h2v4.4l1.7-1.7 1.4 1.4-4.1 4.1-4.1-4.1 1.4-1.4z"/>
+                      </svg>
+                    </n-icon>
+                    <span>Excel 导入</span>
+                  </NuxtLink>
                 </nav>
 
                 <div class="app-actions">

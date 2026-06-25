@@ -60,6 +60,10 @@ image:
     storage: D:\1
     base-url: http://localhost:8080/images
 
+qweather:
+  base-url: ${QWEATHER_BASE_URL}
+  api-key: ${QWEATHER_API_KEY}
+
 logging:
   level:
     root: info
