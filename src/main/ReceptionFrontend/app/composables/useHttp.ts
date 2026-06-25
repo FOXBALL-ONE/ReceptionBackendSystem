@@ -28,6 +28,47 @@ function getResponseMessage(response: ApiResult<unknown>) {
     return response.msg ?? response.message ?? "Request failed";
 }
 
+/**
+ * 处理后端返回 401（未登录 / 会话过期）。
+ *
+ * 仅在客户端、且非 /auth/ 接口上触发：登录接口本身的 401 表示账密错误，交由调用方处理。
+ * 清空本地登录态并跳转登录页，保留原路径以便登录后回跳。
+ */
+function redirectOnUnauthorized(error: unknown, url: string) {
+    if (!import.meta.client) {
+        return;
+    }
+    if (url.startsWith("/auth/")) {
+        return;
+    }
+
+    const status = (error as { response?: { status?: number }; statusCode?: number })?.response?.status
+        ?? (error as { statusCode?: number })?.statusCode;
+    if (status !== 401) {
+        return;
+    }
+
+    try {
+        useAuthStore().reset();
+    } catch {
+        // 忽略 Nuxt 上下文不可用的情况
+    }
+
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        const redirect = window.location.pathname + window.location.search;
+        void navigateTo({path: "/login", query: {redirect}});
+    }
+}
+
+/** 读取当前登录令牌，用于在每个请求上注入 Authorization 头；上下文不可用时返回 null。 */
+function readAuthToken(): string | null {
+    try {
+        return useAuthStore().token;
+    } catch {
+        return null;
+    }
+}
+
 export const useHttp = () => {
     const runtimeConfig = useRuntimeConfig();
     const apiBase = runtimeConfig.public.apiBase as string || "http://127.0.0.1:8080/api";
@@ -37,6 +78,12 @@ export const useHttp = () => {
             baseURL: apiBase,
             headers: {
                 Accept: "application/json",
+            },
+            async onRequest({options}) {
+                const token = readAuthToken();
+                if (token) {
+                    options.headers.set("Authorization", `Bearer ${token}`);
+                }
             },
         },
     });
@@ -53,13 +100,19 @@ export const useHttp = () => {
         const requestBody = payloadMode === "json"
             ? ((body ?? payload) as JsonBody)
             : undefined;
-        const response = await http<ApiResult<TResponse>>(url, {
-            method,
-            ...fetchOptions,
-            query,
-            headers: fetchOptions.headers,
-            body: requestBody,
-        });
+        let response: ApiResult<TResponse>;
+        try {
+            response = await http<ApiResult<TResponse>>(url, {
+                method,
+                ...fetchOptions,
+                query,
+                headers: fetchOptions.headers,
+                body: requestBody,
+            });
+        } catch (error) {
+            redirectOnUnauthorized(error, url);
+            throw error;
+        }
 
         const responseCode = getResponseCode(response);
         if (responseCode !== SUCCESS_CODE && responseCode !== SUCCESS_CODE_ALTERNATE) {

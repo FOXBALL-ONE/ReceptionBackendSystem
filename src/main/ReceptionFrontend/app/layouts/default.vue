@@ -50,7 +50,7 @@
                 </nav>
 
                 <div class="app-actions">
-                  <n-dropdown trigger="hover" :options="userMenuOptions">
+                  <n-dropdown trigger="hover" :options="userMenuOptions" @select="handleUserMenuSelect">
                     <div class="user-profile">
                       <n-avatar
                         round
@@ -61,7 +61,7 @@
                       >
                         管
                       </n-avatar>
-                      <span class="user-name">管理员</span>
+                      <span class="user-name">{{ auth.user?.displayName ?? auth.user?.username ?? '管理员' }}</span>
                       <n-icon size="16" class="dropdown-icon">
                         <svg viewBox="0 0 24 24">
                           <path fill="currentColor" d="M7 10l5 5 5-5z"/>
@@ -115,6 +115,17 @@ hljs.registerLanguage("yaml", yaml);
 const naiveOsTheme = useOsTheme();
 
 const osTheme = computed(() => (naiveOsTheme.value === "dark" ? darkTheme : null));
+
+const auth = useAuthStore();
+
+const handleUserMenuSelect = async (key: string) => {
+  if (key === "logout") {
+    await auth.logout();
+    await navigateTo("/login");
+  } else if (key === "settings" || key === "profile") {
+    await navigateTo("/settings");
+  }
+};
 
 const userMenuOptions = [
   {

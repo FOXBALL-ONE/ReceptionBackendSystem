@@ -41,6 +41,13 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:5.4.0")
 
+    // JWT 签发与解析（api 编译期，impl/gson 运行期）。
+    // 注意：不要用 jjwt-jackson，它会引入 com.fasterxml Jackson2，导致 Hibernate 的
+    // JSON 列写出从 Yasson 切到 Jackson2（缺 jsr310），序列化 LocalDateTime 报错。
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-gson:0.12.6")
+
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")

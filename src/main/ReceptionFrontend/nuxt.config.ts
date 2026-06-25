@@ -11,6 +11,14 @@ export default defineNuxtConfig({
           apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://127.0.0.1:8080/api",
         },
       },
+      routeRules: {
+        // 全局启用登录校验中间件（middleware/auth.ts）
+        "/**": {
+          appMiddleware: {
+            auth: true,
+          },
+        },
+      },
       devtools: {
         enabled: true,
 

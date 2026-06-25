@@ -64,6 +64,16 @@ qweather:
   base-url: ${QWEATHER_BASE_URL}
   api-key: ${QWEATHER_API_KEY}
 
+auth:
+  # 首次启动写入 users 表的默认管理员种子账号（密码入库时会被 BCrypt 哈希）。
+  # 登录校验始终以 users 表为准；生产环境请通过 AUTH_USERNAME / AUTH_PASSWORD 环境变量覆盖。
+  username: ${AUTH_USERNAME:admin}
+  password: ${AUTH_PASSWORD:admin123}
+  # JWT 签名密钥（HS256，需 ≥32 字节）；生产环境务必通过 AUTH_JWT_SECRET 覆盖，变更后已签发令牌全部失效。
+  jwt-secret: ${AUTH_JWT_SECRET:reception-backend-dev-jwt-secret-please-override-in-production}
+  # 令牌有效期（分钟），默认 7 天
+  jwt-expiration-minutes: ${AUTH_JWT_EXPIRATION_MINUTES:10080}
+
 logging:
   level:
     root: info
