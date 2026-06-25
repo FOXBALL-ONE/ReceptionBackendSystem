@@ -350,6 +350,10 @@ export const useEventApi = () => {
       }, { payloadMode: 'json' })
     },
 
+    getWeatherForecast: async (location: string) => {
+      return await post<any[]>('/weather/forecast', { location }, { payloadMode: 'json' })
+    },
+
     /**
      * Excel 导入模板下载地址（GET，浏览器直接下载）
      */

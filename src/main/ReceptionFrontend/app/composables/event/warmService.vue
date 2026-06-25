@@ -23,6 +23,26 @@
         </n-button>
       </template>
 
+      <div class="weather-query">
+        <n-input
+          v-model:value="weatherLocation"
+          placeholder="输入地点，如 北京"
+          clearable
+          @keyup.enter="queryWeather"
+        />
+        <n-button
+          type="primary"
+          :loading="queryingWeather"
+          :disabled="!weatherLocation.trim()"
+          @click="queryWeather"
+        >
+          <template #icon>
+            <GoSearch />
+          </template>
+          查询天气
+        </n-button>
+      </div>
+
       <n-empty v-if="weatherItems.length === 0" description="暂无天气">
         <template #extra>
           <n-button type="primary" @click="addWeather">添加天气</n-button>
@@ -121,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { GoArrowDown, GoArrowUp, GoPlus, GoTrash } from "vue-icons-plus/go";
+import { GoArrowDown, GoArrowUp, GoPlus, GoSearch, GoTrash } from "vue-icons-plus/go";
 import ConferenceNoticeMode from "~/composables/event/warm-service/ConferenceNoticeMode.vue";
 import StaffTipsMode from "~/composables/event/warm-service/StaffTipsMode.vue";
 
@@ -135,6 +155,13 @@ interface WeatherItem {
   city: string;
   temperature: string;
   condition: string;
+}
+
+interface WeatherForecastPayload {
+  time?: string | number | Date | null;
+  city?: string | null;
+  temperature?: string | null;
+  weatherDescriptor?: string | null;
 }
 
 interface ConferenceNotice {
@@ -204,7 +231,9 @@ const conferenceNotice = ref<ConferenceNotice>({
 const weatherItems = ref<WeatherItem[]>([createWeatherItem()]);
 const staffGroups = ref<StaffGroup[]>([createStaffGroup("会务组")]);
 const warmTips = ref<WarmTip[]>([createWarmTip()]);
+const weatherLocation = ref("");
 const loading = ref(false);
+const queryingWeather = ref(false);
 const saving = ref(false);
 const promptServiceId = ref<number | string | null>(null);
 
@@ -312,6 +341,37 @@ function getWeatherSummary(weather: WeatherItem) {
   return summaryParts.length > 0 ? summaryParts.join(" / ") : "未填写天气信息";
 }
 
+async function queryWeather() {
+  const location = weatherLocation.value.trim();
+  if (!location) {
+    message.warning("请输入地点");
+    return;
+  }
+
+  try {
+    queryingWeather.value = true;
+    const forecastList = await eventApi.getWeatherForecast(location) as WeatherForecastPayload[];
+
+    if (!Array.isArray(forecastList) || forecastList.length === 0) {
+      message.warning("未查询到天气预报");
+      return;
+    }
+
+    weatherItems.value = forecastList.map((weather) => createWeatherItem({
+      date: formatWeatherDate(weather.time),
+      city: weather.city || location,
+      temperature: weather.temperature || '',
+      condition: weather.weatherDescriptor || '',
+    }));
+
+    message.success(`已填入${weatherItems.value.length}天天气情况`);
+  } catch (error: any) {
+    message.error(error.statusMessage || error.message || "天气查询失败");
+  } finally {
+    queryingWeather.value = false;
+  }
+}
+
 function resetWarmServiceState() {
   promptServiceId.value = null
   isStaffTipsMode.value = false
@@ -320,6 +380,7 @@ function resetWarmServiceState() {
     content: "",
   }
   weatherItems.value = [createWeatherItem()]
+  weatherLocation.value = ""
   staffGroups.value = [createStaffGroup("会务组")]
   warmTips.value = [createWarmTip()]
 }
@@ -373,6 +434,16 @@ function formatWeatherDate(dateValue: unknown): string | null {
   return null
 }
 
+function toWeatherTimePayload(dateValue: string | null): string | null {
+  const formattedDate = formatWeatherDate(dateValue)
+  if (!formattedDate) {
+    return null
+  }
+
+  const [year, month, day] = formattedDate.split(':')
+  return `${year}-${month}-${day}T00:00:00`
+}
+
 function pickPromptService(response: PromptServicePayload | PromptServicePayload[] | null | undefined) {
   if (Array.isArray(response)) {
     return response[0] ?? null
@@ -398,6 +469,10 @@ const loadWarmServiceData = async () => {
           temperature: weather.temperature || '',
           condition: weather.weatherDescriptor || '',
         }))
+        weatherLocation.value = weatherItems.value.find((weather) => weather.city)?.city || weatherLocation.value
+      } else {
+        weatherItems.value = [createWeatherItem()]
+        weatherLocation.value = ""
       }
 
       if (!data.attendanceInstructionsMode) {
@@ -441,7 +516,7 @@ const loadWarmServiceData = async () => {
 
 function buildSavePayload() {
   const weatherList = weatherItems.value.map((weather) => ({
-    time: weather.date,
+    time: toWeatherTimePayload(weather.date),
     city: weather.city.trim(),
     temperature: weather.temperature.trim(),
     weatherDescriptor: weather.condition.trim(),
@@ -570,6 +645,13 @@ watch(() => eventId?.value, (newId) => {
   color: #175cd3;
 }
 
+.weather-query {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
 .item-panel {
   display: grid;
   gap: 14px;
@@ -624,6 +706,10 @@ watch(() => eventId?.value, (newId) => {
 
   .mode-toggle {
     justify-content: flex-start;
+  }
+
+  .weather-query {
+    grid-template-columns: 1fr;
   }
 
   .panel-title,
