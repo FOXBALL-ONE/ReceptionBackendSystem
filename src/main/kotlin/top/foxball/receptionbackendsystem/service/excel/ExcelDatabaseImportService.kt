@@ -37,6 +37,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.Year
 import java.util.UUID
+import kotlin.random.Random
 
 @Service
 class ExcelDatabaseImportService(
@@ -121,28 +122,49 @@ class ExcelDatabaseImportService(
         val peopleByName = parsed.personnel
             .mapNotNull { row -> row.name?.trimToNull()?.let { it to row } }
             .toMap()
-        val colorTagsByName = mutableMapOf<String, ColorTag>()
+        val importedSchedules = parsed.schedules.toSchedules(activity)
+        val inspectionTeamsByName = linkedMapOf<String, InspectionTeamItem>()
+        parsed.schedules
+            .toInspectionTeams(activity, importedSchedules, startTime?.year ?: Year.now().value)
+            .forEach { team ->
+                team.name?.trimToNull()?.let { inspectionTeamsByName.putIfAbsent(it, team) }
+            }
+        val inspectionTeamNames = parsed.personnel
+            .mapNotNull { it.inspectionTeamName() }
+            .distinct()
+        inspectionTeamNames.forEach { teamName ->
+            inspectionTeamsByName.getOrPut(teamName) {
+                InspectionTeamItem(activity = activity, name = teamName)
+            }
+        }
 
-        activity.personList = parsed.personnel.mapNotNull { it.toPerson(activity) }.toMutableList()
+        val teamColorsByName = inspectionTeamNames.toRandomHexColors()
+        val personColorTagsByTeamName = teamColorsByName.toColorTags(activity, ColorTag.TYPE_PERSON)
+        val lodgingColorTagsByTeamName = teamColorsByName.toColorTags(activity, ColorTag.TYPE_LODGING)
+
+        activity.personList = parsed.personnel
+            .mapNotNull { it.toPerson(activity, personColorTagsByTeamName) }
+            .toMutableList()
         activity.carList = parsed.cars.map { it.toCar(activity, peopleByName) }.toMutableList()
         activity.mealList = parsed.meals.map { it.toMeal(activity) }.toMutableList()
-        activity.hostedList = parsed.lodgings.mapNotNull { it.toLodging(activity, peopleByName, colorTagsByName) }.toMutableList()
-        activity.colorTagList = colorTagsByName.values.toMutableList()
+        activity.hostedList = parsed.lodgings
+            .mapNotNull { it.toLodging(activity, peopleByName, lodgingColorTagsByTeamName) }
+            .toMutableList()
+        activity.colorTagList = (personColorTagsByTeamName.values + lodgingColorTagsByTeamName.values).toMutableList()
         activity.inspectionPoints = parsed.inspectionPoints.map { it.toInspectionPoint(activity) }.toMutableList()
         activity.overviewOfTheCityAndCounty = parsed.overviews.map { it.toOverview(activity) }.toMutableList()
-        val importedSchedules = parsed.schedules.toSchedules(activity)
         activity.schedules = importedSchedules.toMutableList()
-        activity.inspectionTeamItemList = parsed.schedules
-            .toInspectionTeams(activity, importedSchedules, startTime?.year ?: Year.now().value)
-            .toMutableList()
+        activity.inspectionTeamItemList = inspectionTeamsByName.values.toMutableList()
         activity.promptServiceList = mutableListOf(parsed.toPromptService(activity))
 
         bindActivityChildren(activity)
 
         val saved = activitiesRepository.saveAndFlush(activity)
+        saved.applyImportedInspectionTeamIds(parsed.personnel)
+        val savedWithTeamBindings = activitiesRepository.saveAndFlush(saved)
         return ExcelDatabaseImportResult(
-            activityId = saved.id,
-            url = saved.url,
+            activityId = savedWithTeamBindings.id,
+            url = savedWithTeamBindings.url,
             personnelCount = parsed.personnel.size,
             carCount = parsed.cars.size,
             mealCount = parsed.meals.size,
@@ -175,12 +197,16 @@ class ExcelDatabaseImportService(
     private fun ParsedExcelWorkbook.inferStartTime(): LocalDateTime? =
         meals.mapNotNull { it.time }.minOrNull()
 
-    private fun PersonnelItem.toPerson(activity: Activities): Person? {
+    private fun PersonnelItem.toPerson(
+        activity: Activities,
+        colorTagsByTeamName: Map<String, ColorTag>,
+    ): Person? {
         val personName = name?.trimToNull() ?: return null
         return Person(
             activity = activity,
             name = personName,
             unit = unit?.trimToNull(),
+            colorTag = inspectionTeamName()?.let(colorTagsByTeamName::get),
         )
     }
 
@@ -220,25 +246,18 @@ class ExcelDatabaseImportService(
     private fun LodgingItem.toLodging(
         activity: Activities,
         peopleByName: Map<String, PersonnelItem>,
-        colorTagsByName: MutableMap<String, ColorTag>,
+        colorTagsByTeamName: Map<String, ColorTag>,
     ): Lodging? {
         val personName = name?.trimToNull() ?: return null
-        val person = peopleByName[personName]?.toPersonSnapshot() ?: Person(name = personName, unit = unit?.trimToNull())
+        val normalizedRoomNumber = roomNumber?.cleanRoomNumber() ?: return null
+        val personnel = peopleByName[personName]
+        val person = personnel?.toPersonSnapshot() ?: Person(name = personName, unit = unit?.trimToNull())
         return Lodging(
-            roomNumber = roomNumber?.cleanRoomNumber(),
+            roomNumber = normalizedRoomNumber,
             person = person,
-            colorTag = position?.trimToNull()?.let { colorTagsByName.getOrCreate(activity, it) },
+            colorTag = personnel?.inspectionTeamName()?.let(colorTagsByTeamName::get),
         )
     }
-
-    private fun MutableMap<String, ColorTag>.getOrCreate(activity: Activities, name: String): ColorTag =
-        getOrPut(name) {
-            ColorTag(
-                activity = activity,
-                name = name,
-                type = ColorTag.TYPE_LODGING,
-            )
-        }
 
     private fun InspectionPointsItem.toInspectionPoint(activity: Activities): InspectionPoint =
         InspectionPoint(
@@ -369,6 +388,69 @@ class ExcelDatabaseImportService(
             .trim()
             .takeIf { it.isNotEmpty() }
 
+    private fun PersonnelItem.inspectionTeamName(): String? =
+        inspectionTeam?.trimToNull()
+
+    private fun List<String>.toRandomHexColors(): Map<String, String> {
+        val usedColors = mutableSetOf<String>()
+        return associateWith {
+            generateSequence { randomHexColor() }
+                .first { usedColors.add(it) }
+        }
+    }
+
+    private fun Map<String, String>.toColorTags(activity: Activities, type: String): Map<String, ColorTag> =
+        mapValues { (teamName, color) ->
+            ColorTag(
+                activity = activity,
+                name = teamName,
+                color = color,
+                type = type,
+            )
+        }
+
+    private fun Activities.applyImportedInspectionTeamIds(personnel: List<PersonnelItem>) {
+        val teamIdsByName = inspectionTeamItemList
+            .mapNotNull { team ->
+                val teamName = team.name?.trimToNull()
+                val teamId = team.id
+                if (teamName != null && teamId != null) teamName to teamId else null
+            }
+            .toMap()
+        val teamIdsByPersonName = personnel
+            .mapNotNull { row ->
+                val personName = row.name?.trimToNull()
+                val teamId = row.inspectionTeamName()?.let(teamIdsByName::get)
+                if (personName != null && teamId != null) personName to teamId else null
+            }
+            .toMap()
+
+        personList.forEach { person ->
+            person.inspectionTeamItemId = person.name?.trimToNull()?.let(teamIdsByPersonName::get)
+        }
+        hostedList.forEach { lodging ->
+            val snapshot = lodging.person
+            val teamId = snapshot?.name?.trimToNull()?.let(teamIdsByPersonName::get)
+            lodging.person = snapshot?.toJsonSnapshot(teamId)
+        }
+        carList.forEach { car ->
+            car.passengersList = car.passengersList
+                .map { passenger ->
+                    val teamId = passenger.name?.trimToNull()?.let(teamIdsByPersonName::get)
+                    passenger.toJsonSnapshot(teamId)
+                }
+                .toMutableList()
+        }
+    }
+
+    private fun Person.toJsonSnapshot(inspectionTeamItemId: Long?): Person =
+        Person(
+            name = name?.trimToNull(),
+            unit = unit?.trimToNull(),
+            nickName = nickName?.trimToNull(),
+            inspectionTeamItemId = inspectionTeamItemId,
+        )
+
     private fun String.trimToNull(): String? = trim().takeIf { it.isNotEmpty() }
 
     private fun <T> ByteArray.parse(parser: (ByteArrayInputStream) -> T): T =
@@ -377,6 +459,9 @@ class ExcelDatabaseImportService(
     private companion object {
         val MonthDayRegex = Regex("(\\d{1,2})月(\\d{1,2})日")
         val TimeRegex = Regex("(\\d{1,2}):(\\d{2})")
+
+        fun randomHexColor(): String =
+            "#%06X".format(Random.nextInt(0x1000000))
     }
 }
 
