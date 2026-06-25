@@ -96,11 +96,14 @@
     <n-card :bordered="false" class="table-card">
       <template #header>
         <div class="table-header">
-          <h3 class="table-title">活动列表</h3>
-          <n-space>
+          <div class="table-title-group">
+            <h3 class="table-title">活动列表</h3>
+            <span v-if="lastUpdatedText" class="last-updated">上次更新 {{ lastUpdatedText }}</span>
+          </div>
+          <n-flex :size="10" align="center" wrap>
             <n-input
               v-model:value="searchKeyword"
-              placeholder="搜索活动"
+              placeholder="搜索活动名称或路径"
               clearable
               style="width: 240px"
               @input="handleSearch"
@@ -113,7 +116,21 @@
                 </n-icon>
               </template>
             </n-input>
-          </n-space>
+            <n-button
+              class="refresh-btn"
+              :loading="loading"
+              @click="handleRefresh"
+            >
+              <template #icon>
+                <n-icon>
+                  <svg viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                  </svg>
+                </n-icon>
+              </template>
+              刷新
+            </n-button>
+          </n-flex>
         </div>
       </template>
 
@@ -414,6 +431,7 @@ const closingEventId = ref<number | null>(null)
 const deletingEventId = ref<number | null>(null)
 const events = ref<EventDisplayItem[]>([])
 const searchKeyword = ref('')
+const lastUpdated = ref<Date | null>(null)
 const createFormRef = ref<FormInst | null>(null)
 const selectedQrEvent = ref<EventDisplayItem | null>(null)
 const qrCodeDataUrl = ref('')
@@ -488,6 +506,13 @@ const filteredEvents = computed(() => {
     event.name.toLowerCase().includes(keyword) ||
     event.path.toLowerCase().includes(keyword)
   )
+})
+
+const lastUpdatedText = computed(() => {
+  if (!lastUpdated.value) return ''
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const d = lastUpdated.value
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 })
 
 const normalizeEventList = (rawEvents: unknown): Event[] => {
@@ -584,16 +609,26 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback
 }
 
-const fetchEvents = async () => {
+const fetchEvents = async (): Promise<boolean> => {
   try {
     loading.value = true
     const rawEvents = await eventApi.getEventList()
     events.value = normalizeEventList(rawEvents).map(convertEventToDisplayItem)
+    lastUpdated.value = new Date()
+    return true
   } catch (error: unknown) {
     message.error(getErrorMessage(error, '获取活动列表失败'))
     console.error('Failed to fetch events:', error)
+    return false
   } finally {
     loading.value = false
+  }
+}
+
+const handleRefresh = async () => {
+  const ok = await fetchEvents()
+  if (ok) {
+    message.success('活动列表已刷新')
   }
 }
 
@@ -885,6 +920,23 @@ onMounted(() => {
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
+}
+
+.table-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.last-updated {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.refresh-btn {
+  flex-shrink: 0;
 }
 
 /* 表格样式 */
