@@ -12,7 +12,8 @@ import top.foxball.receptionbackendsystem.shared.LoginUser
 /**
  * 登录校验拦截器。
  *
- * 从 Authorization: Bearer 头中取出 JWT，校验签名、有效期并排除已注销令牌；
+ * 从 Authorization: Bearer 头取出 JWT 并校验签名、有效期、未撤销；
+ * 只放行 LOGIN 类型令牌——TFA_CHALLENGE 挑战令牌不得访问受保护资源。
  * 通过后将登录用户存入请求属性供后续使用，未通过则写出统一的 401 JSON 响应。
  */
 @Component
@@ -24,7 +25,10 @@ class LoginInterceptor(
         val token = AuthTokens.extractBearer(request)
         val parsed = token?.let { jwtService.parse(it) }
 
-        if (parsed == null || jwtTokenStore.isRevoked(parsed.jti)) {
+        if (parsed == null ||
+            parsed.type == JwtService.TokenType.TFA_CHALLENGE ||
+            jwtTokenStore.isRevoked(parsed.jti)
+        ) {
             response.status = HttpServletResponse.SC_UNAUTHORIZED
             response.contentType = RESPONSE_CONTENT_TYPE
             response.writer.write(UNAUTHORIZED_BODY)

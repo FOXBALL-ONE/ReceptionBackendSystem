@@ -2,6 +2,7 @@ package top.foxball.receptionbackendsystem.controller
 
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -53,8 +54,50 @@ class AccountController(
         )
         return builder.ok()
             .message("用户名修改成功")
-            .data(LoginResponse(token = result.token, user = result.user.toView()))
+            .data(LoginResponse(twoFactorRequired = false, token = result.token, user = result.user.toView()))
             .build()
+    }
+
+    /** 查询两步验证状态。 */
+    @GetMapping("/totp/status")
+    fun totpStatus(httpRequest: HttpServletRequest): ResponseEntity<ApiResponse> {
+        val userId = LoginInterceptor.currentLoginUser(httpRequest)?.id
+            ?: throw UnauthorizedException()
+        val status = accountService.totpStatus(userId)
+        return builder.ok().data(TotpStatusResponse(enabled = status.enabled, pending = status.pending)).build()
+    }
+
+    /** 发起两步验证设置：返回明文密钥与 otpauth URI。 */
+    @PostMapping("/totp/setup")
+    fun totpSetup(httpRequest: HttpServletRequest): ResponseEntity<ApiResponse> {
+        val userId = LoginInterceptor.currentLoginUser(httpRequest)?.id
+            ?: throw UnauthorizedException()
+        val view = accountService.totpSetup(userId)
+        return builder.ok().data(TotpSetupResponse(secret = view.secret, otpauthUri = view.otpauthUri)).build()
+    }
+
+    /** 确认启用两步验证：校验动态码，成功返回一次性备用码。 */
+    @PostMapping("/totp/enable")
+    fun totpEnable(
+        @RequestBody request: TotpEnableRequest,
+        httpRequest: HttpServletRequest,
+    ): ResponseEntity<ApiResponse> {
+        val userId = LoginInterceptor.currentLoginUser(httpRequest)?.id
+            ?: throw UnauthorizedException()
+        val backupCodes = accountService.totpEnable(userId, request.code)
+        return builder.ok().message("两步验证已开启").data(TotpEnableResponse(backupCodes = backupCodes)).build()
+    }
+
+    /** 关闭两步验证：需当前密码确认。 */
+    @PostMapping("/totp/disable")
+    fun totpDisable(
+        @RequestBody request: TotpDisableRequest,
+        httpRequest: HttpServletRequest,
+    ): ResponseEntity<ApiResponse> {
+        val userId = LoginInterceptor.currentLoginUser(httpRequest)?.id
+            ?: throw UnauthorizedException()
+        accountService.totpDisable(userId, request.password)
+        return builder.ok().message("两步验证已关闭").build()
     }
 }
 
@@ -67,5 +110,32 @@ data class ChangePasswordRequest(
 /** 修改用户名请求体 */
 data class ChangeUsernameRequest(
     val newUsername: String? = null,
+    val password: String? = null,
+)
+
+/** 两步验证状态响应 */
+data class TotpStatusResponse(
+    val enabled: Boolean,
+    val pending: Boolean,
+)
+
+/** 两步验证设置响应：明文密钥与 otpauth URI */
+data class TotpSetupResponse(
+    val secret: String,
+    val otpauthUri: String,
+)
+
+/** 确认启用两步验证请求体 */
+data class TotpEnableRequest(
+    val code: String? = null,
+)
+
+/** 确认启用两步验证响应：一次性备用码 */
+data class TotpEnableResponse(
+    val backupCodes: List<String>,
+)
+
+/** 关闭两步验证请求体 */
+data class TotpDisableRequest(
     val password: String? = null,
 )

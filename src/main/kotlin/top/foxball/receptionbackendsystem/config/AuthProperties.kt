@@ -29,4 +29,19 @@ class AuthProperties {
 
     /** JWT 有效期（分钟），默认 7 天 */
     var jwtExpirationMinutes: Long = 7 * 24 * 60L
+
+    /** TOTP 两步验证配置。 */
+    var totp: Totp = Totp()
+
+    /** TOTP 两步验证配置项。 */
+    class Totp {
+        /** authenticator 中显示的发行方名称。 */
+        var issuer: String = "接待管理系统"
+
+        /** 两步验证挑战令牌有效期（分钟）。 */
+        var challengeMinutes: Long = 5
+
+        /** TOTP 密钥加密密钥（经 SHA-256 派生为 AES-256），生产环境务必覆盖。 */
+        var secretEncryptionKey: String = "dev-totp-enc-key-please-override-in-production-32b"
+    }
 }

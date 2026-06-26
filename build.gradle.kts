@@ -48,6 +48,9 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-gson:0.12.6")
 
+    // TOTP 两步验证（RFC 6238）；仅依赖 commons-codec，不引入 Jackson2
+    implementation("dev.samstevens.totp:totp:1.7.1")
+
     compileOnly("org.projectlombok:lombok")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")

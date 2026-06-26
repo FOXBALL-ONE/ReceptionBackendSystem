@@ -44,7 +44,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # 每次启动时重新创建表结构
+      ddl-auto: update  # 保留并增量更新表结构，使用户账号/2FA 绑定等数据持久化
     show-sql: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
@@ -74,6 +74,14 @@ auth:
   jwt-secret: ${AUTH_JWT_SECRET:reception-backend-dev-jwt-secret-please-override-in-production}
   # 令牌有效期（分钟），默认 7 天
   jwt-expiration-minutes: ${AUTH_JWT_EXPIRATION_MINUTES:10080}
+  # TOTP 两步验证配置
+  totp:
+    # authenticator 中显示的发行方名称
+    issuer: 接待管理系统
+    # 两步验证挑战令牌有效期（分钟）
+    challenge-minutes: ${AUTH_TOTP_CHALLENGE_MINUTES:5}
+    # TOTP 密钥加密密钥（经 SHA-256 派生为 AES-256），生产环境务必通过 AUTH_TOTP_ENC_KEY 覆盖
+    secret-encryption-key: ${AUTH_TOTP_ENC_KEY:dev-totp-enc-key-please-override-in-production-32b}
 
 logging:
   level:

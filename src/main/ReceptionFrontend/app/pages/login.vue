@@ -4,10 +4,12 @@
       <div class="login-brand">
         <div class="brand-mark">接</div>
         <h1 class="login-title">活动接待管理</h1>
-        <p class="login-subtitle">请登录后进入后台管理</p>
+        <p class="login-subtitle">{{ step === 'credentials' ? '请登录后进入后台管理' : '请完成两步验证' }}</p>
       </div>
 
+      <!-- 第一步：账号密码 -->
       <n-form
+        v-if="step === 'credentials'"
         ref="formRef"
         :model="form"
         :rules="rules"
@@ -64,6 +66,52 @@
           登录
         </n-button>
       </n-form>
+
+      <!-- 第二步：两步验证 -->
+      <n-form
+        v-else
+        ref="totpFormRef"
+        :model="totpForm"
+        :rules="totpRules"
+        label-placement="top"
+        size="large"
+        @submit.prevent="handleTotpSubmit"
+      >
+        <n-form-item :label="totpForm.useBackup ? '备用码' : '动态码'" path="code">
+          <n-input
+            v-model:value="totpForm.code"
+            :placeholder="totpForm.useBackup ? '请输入备用码' : '请输入 6 位动态码'"
+            clearable
+            @keydown.enter="handleTotpSubmit"
+          >
+            <template #prefix>
+              <n-icon>
+                <svg viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+                </svg>
+              </n-icon>
+            </template>
+          </n-input>
+        </n-form-item>
+
+        <n-button
+          type="primary"
+          size="large"
+          block
+          :loading="totpLoading"
+          class="login-submit"
+          @click="handleTotpSubmit"
+        >
+          验证
+        </n-button>
+
+        <div class="totp-actions">
+          <n-button text @click="toggleUseBackup">
+            {{ totpForm.useBackup ? '使用动态码' : '使用备用码' }}
+          </n-button>
+          <n-button text @click="backToCredentials">返回上一步</n-button>
+        </div>
+      </n-form>
     </div>
   </div>
 </template>
@@ -79,16 +127,30 @@ const message = useMessage();
 const auth = useAuthStore();
 
 const formRef = ref<FormInst | null>(null);
+const totpFormRef = ref<FormInst | null>(null);
 const loading = ref(false);
+const totpLoading = ref(false);
+
+// credentials | totp
+const step = ref<"credentials" | "totp">("credentials");
 
 const form = reactive({
   username: "",
   password: "",
 });
 
+const totpForm = reactive({
+  code: "",
+  useBackup: false,
+});
+
 const rules: FormRules = {
   username: {required: true, message: "请输入账号", trigger: ["input", "blur"]},
   password: {required: true, message: "请输入密码", trigger: ["input", "blur"]},
+};
+
+const totpRules: FormRules = {
+  code: {required: true, message: "请输入验证码", trigger: ["input", "blur"]},
 };
 
 const resolveRedirect = (): string => {
@@ -121,14 +183,55 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true;
-    await auth.login(form.username.trim(), form.password);
-    message.success("登录成功");
-    await router.push(resolveRedirect());
+    const result = await auth.login(form.username.trim(), form.password);
+    if (result.twoFactorRequired) {
+      step.value = "totp";
+      totpForm.code = "";
+      totpForm.useBackup = false;
+    } else {
+      message.success("登录成功");
+      await router.push(resolveRedirect());
+    }
   } catch (error: unknown) {
     message.error(getErrorMessage(error, "登录失败"));
   } finally {
     loading.value = false;
   }
+};
+
+const handleTotpSubmit = async () => {
+  try {
+    await totpFormRef.value?.validate();
+  } catch {
+    return;
+  }
+
+  try {
+    totpLoading.value = true;
+    if (totpForm.useBackup) {
+      await auth.verifyBackup(totpForm.code.trim());
+    } else {
+      await auth.verifyTotp(totpForm.code.trim());
+    }
+    message.success("登录成功");
+    await router.push(resolveRedirect());
+  } catch (error: unknown) {
+    message.error(getErrorMessage(error, "验证失败"));
+  } finally {
+    totpLoading.value = false;
+  }
+};
+
+const toggleUseBackup = () => {
+  totpForm.useBackup = !totpForm.useBackup;
+  totpForm.code = "";
+};
+
+const backToCredentials = () => {
+  auth.challengeToken = null;
+  totpForm.code = "";
+  totpForm.useBackup = false;
+  step.value = "credentials";
 };
 </script>
 
@@ -191,5 +294,11 @@ const handleSubmit = async () => {
   margin-top: 8px;
   border-radius: 10px;
   font-weight: 550;
+}
+
+.totp-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
 }
 </style>

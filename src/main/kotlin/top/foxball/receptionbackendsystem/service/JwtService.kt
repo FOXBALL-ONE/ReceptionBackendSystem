@@ -15,7 +15,8 @@ import javax.crypto.SecretKey
  * JWT 签发与解析服务。
  *
  * 使用 HMAC-SHA256 对称签名，密钥来自 auth.jwtSecret（内存中持有，无需 Redis）。
- * 令牌自包含用户信息与有效期，签名校验通过即视为合法，服务端重启后旧令牌仍可用。
+ * 令牌带 ttype 声明区分用途：LOGIN 为正常登录令牌，TFA_CHALLENGE 为两步验证用的
+ * 短时挑战令牌（仅可用于 /api/auth/login/totp|backup，不能访问受保护资源）。
  */
 @Service
 class JwtService(
@@ -23,24 +24,34 @@ class JwtService(
 ) {
     private val key: SecretKey = Keys.hmacShaKeyFor(authProperties.jwtSecret.toByteArray(Charsets.UTF_8))
 
+    /** 令牌用途。 */
+    enum class TokenType { LOGIN, TFA_CHALLENGE }
+
     /** 解析成功的令牌信息。 */
     data class ParsedJwt(
         val user: LoginUser,
         val jti: String,
         val exp: Long,
+        val type: TokenType,
     )
 
     /**
-     * 为登录用户签发一个新令牌。
+     * 签发令牌。LOGIN 用 jwt-expiration-minutes，TFA_CHALLENGE 用 totp.challenge-minutes。
      */
-    fun generate(user: LoginUser): String {
+    fun generate(user: LoginUser, type: TokenType = TokenType.LOGIN): String {
         val now = Date()
-        val expiration = Date(now.time + authProperties.jwtExpirationMinutes * MILLIS_PER_MINUTE)
+        val ttlMillis = if (type == TokenType.TFA_CHALLENGE) {
+            authProperties.totp.challengeMinutes * MILLIS_PER_MINUTE
+        } else {
+            authProperties.jwtExpirationMinutes * MILLIS_PER_MINUTE
+        }
+        val expiration = Date(now.time + ttlMillis)
         return Jwts.builder()
             .id(UUID.randomUUID().toString())
             .subject(user.id?.toString())
             .claim(CLAIM_USERNAME, user.username)
             .claim(CLAIM_DISPLAY_NAME, user.displayName)
+            .claim(CLAIM_TTYPE, type.name)
             .issuedAt(now)
             .expiration(expiration)
             .signWith(key, Jwts.SIG.HS256)
@@ -57,6 +68,9 @@ class JwtService(
                 .build()
                 .parseSignedClaims(token)
                 .payload
+            val type = (claims[CLAIM_TTYPE] as? String)
+                ?.let { runCatching { TokenType.valueOf(it) }.getOrNull() }
+                ?: TokenType.LOGIN
             ParsedJwt(
                 user = LoginUser(
                     id = claims.subject?.toLongOrNull(),
@@ -65,6 +79,7 @@ class JwtService(
                 ),
                 jti = claims.id ?: "",
                 exp = claims.expiration?.time ?: 0L,
+                type = type,
             )
         } catch (_: JwtException) {
             null
@@ -77,5 +92,6 @@ class JwtService(
         private const val MILLIS_PER_MINUTE = 60_000L
         private const val CLAIM_USERNAME = "username"
         private const val CLAIM_DISPLAY_NAME = "displayName"
+        private const val CLAIM_TTYPE = "ttype"
     }
 }
