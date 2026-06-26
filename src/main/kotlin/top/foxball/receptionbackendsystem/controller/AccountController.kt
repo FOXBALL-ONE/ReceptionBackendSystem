@@ -64,7 +64,14 @@ class AccountController(
         val userId = LoginInterceptor.currentLoginUser(httpRequest)?.id
             ?: throw UnauthorizedException()
         val status = accountService.totpStatus(userId)
-        return builder.ok().data(TotpStatusResponse(enabled = status.enabled, pending = status.pending)).build()
+        return builder.ok().data(
+            TotpStatusResponse(
+                enabled = status.enabled,
+                pending = status.pending,
+                backupRemaining = status.backupRemaining,
+                backupUsed = status.backupUsed,
+            )
+        ).build()
     }
 
     /** 发起两步验证设置：返回明文密钥与 otpauth URI。 */
@@ -86,6 +93,18 @@ class AccountController(
             ?: throw UnauthorizedException()
         val backupCodes = accountService.totpEnable(userId, request.code)
         return builder.ok().message("两步验证已开启").data(TotpEnableResponse(backupCodes = backupCodes)).build()
+    }
+
+    /** 重置备用码：需当前密码确认；生成新的 10 枚备用码，旧备用码全部失效，明文仅此一次返回。 */
+    @PostMapping("/totp/backup/reset")
+    fun totpResetBackup(
+        @RequestBody request: TotpResetBackupRequest,
+        httpRequest: HttpServletRequest,
+    ): ResponseEntity<ApiResponse> {
+        val userId = LoginInterceptor.currentLoginUser(httpRequest)?.id
+            ?: throw UnauthorizedException()
+        val backupCodes = accountService.totpResetBackupCodes(userId, request.password)
+        return builder.ok().message("备用码已重置").data(TotpEnableResponse(backupCodes = backupCodes)).build()
     }
 
     /** 关闭两步验证：需当前密码确认。 */
@@ -117,6 +136,8 @@ data class ChangeUsernameRequest(
 data class TotpStatusResponse(
     val enabled: Boolean,
     val pending: Boolean,
+    val backupRemaining: Int,
+    val backupUsed: Int,
 )
 
 /** 两步验证设置响应：明文密钥与 otpauth URI */
@@ -137,5 +158,10 @@ data class TotpEnableResponse(
 
 /** 关闭两步验证请求体 */
 data class TotpDisableRequest(
+    val password: String? = null,
+)
+
+/** 重置备用码请求体 */
+data class TotpResetBackupRequest(
     val password: String? = null,
 )

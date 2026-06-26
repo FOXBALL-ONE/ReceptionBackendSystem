@@ -709,10 +709,11 @@ const copyQrCodeUrl = async () => {
     return
   }
 
-  try {
-    await navigator.clipboard.writeText(qrCodeTargetUrl.value)
+  // 走 clipboard 工具：Clipboard API 在非安全上下文（HTTP）下不可用，需 execCommand 兜底
+  const ok = await copyToClipboard(qrCodeTargetUrl.value)
+  if (ok) {
     message.success('链接已复制')
-  } catch {
+  } else {
     message.warning('复制失败，请手动复制链接')
   }
 }

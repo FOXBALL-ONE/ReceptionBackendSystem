@@ -109,8 +109,11 @@ class AuthService(
             onTotpFailure(parsed, "备用码错误")
         }
 
+        // 命中：从可用列表移除，并记入已用列表（仅哈希）以统计消耗与审计
+        val matchedHash = hashes[matchedIndex]
         val remaining = hashes.toMutableList().apply { removeAt(matchedIndex) }
         user.totpBackupCodes = remaining.takeIf { it.isNotEmpty() }?.joinToString("\n")
+        user.totpBackupCodesUsed = appendHashLine(user.totpBackupCodesUsed, matchedHash)
         consumeChallenge(parsed)
         userRepository.save(user)
 
@@ -174,6 +177,10 @@ class AuthService(
         jwtTokenStore.revoke(parsed.jti, parsed.exp)
         loginAttemptLimiter.reset(parsed.jti)
     }
+
+    /** 将一行哈希追加到换行分隔的列表末尾，用于记录已使用的备用码。 */
+    private fun appendHashLine(existing: String?, hash: String): String =
+        if (existing.isNullOrBlank()) hash else "$existing\n$hash"
 
     private companion object {
         private const val MAX_TOTP_ATTEMPTS = 5

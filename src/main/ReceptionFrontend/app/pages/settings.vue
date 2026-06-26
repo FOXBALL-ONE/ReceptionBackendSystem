@@ -158,11 +158,36 @@
               <div class="backup-codes">
                 <n-tag v-for="c in backupCodes" :key="c" size="large" class="backup-tag">{{ c }}</n-tag>
               </div>
-              <n-button size="small" style="margin-top: 8px" @click="copyText(backupCodes.join('\n'))">复制全部</n-button>
+              <n-flex :size="8" style="margin-top: 8px">
+                <n-button size="small" @click="copyText(backupCodes.join('\n'))">复制全部</n-button>
+                <n-button size="small" @click="downloadBackupCodes">下载 txt</n-button>
+              </n-flex>
             </n-alert>
 
             <template v-else>
               <p class="totp-desc totp-on">两步验证已开启，登录时需输入动态码。</p>
+
+              <!-- 备用码剩余/已用统计 -->
+              <div class="backup-stat">
+                <span>
+                  备用码剩余 <b>{{ backupRemaining }}</b> / {{ backupTotal }}（已使用 {{ backupUsed }}）
+                </span>
+                <n-text v-if="backupRemaining === 0" type="warning" class="backup-exhausted">已用尽，建议重置</n-text>
+              </div>
+
+              <!-- 重置备用码 -->
+              <n-form ref="totpResetFormRef" :model="totpResetForm" :rules="totpResetRules" label-placement="top" size="medium">
+                <n-form-item label="当前密码（重置备用码，旧备用码全部失效）" path="password">
+                  <n-input v-model:value="totpResetForm.password" type="password" show-password-on="click" placeholder="请输入当前密码" />
+                </n-form-item>
+                <n-flex justify="end">
+                  <n-button :loading="totpResetLoading" @click="handleTotpResetBackup">重置备用码</n-button>
+                </n-flex>
+              </n-form>
+
+              <n-divider style="margin: 8px 0" />
+
+              <!-- 关闭两步验证 -->
               <n-form ref="totpDisableFormRef" :model="totpDisableForm" :rules="totpDisableRules" label-placement="top" size="medium">
                 <n-form-item label="当前密码（确认关闭）" path="password">
                   <n-input v-model:value="totpDisableForm.password" type="password" show-password-on="click" placeholder="请输入当前密码" />
@@ -237,12 +262,25 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const copyText = async (text: string) => {
   if (!text) return;
-  try {
-    await navigator.clipboard.writeText(text);
+  // 走 clipboard 工具：Clipboard API 在非安全上下文（HTTP）下不可用，需 execCommand 兜底
+  const ok = await copyToClipboard(text);
+  if (ok) {
     message.success("已复制");
-  } catch {
+  } else {
     message.warning("复制失败，请手动复制");
   }
+};
+
+/** 用于下载文件名的时间戳（YYYYMMDD-HHmm）。 */
+const formatTimestamp = (date: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}`;
+};
+
+/** 用于文档内展示的本地时间（YYYY-MM-DD HH:mm）。 */
+const formatDisplayTime = (date: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 const handleSubmitUsername = async () => {
@@ -295,13 +333,23 @@ const totpDisableLoading = ref(false);
 const setupSecret = ref("");
 const qrDataUrl = ref("");
 const backupCodes = ref<string[] | null>(null);
+// 备用码剩余/已用数量（开启或重置后本地同步，刷新后由 totpStatus 回填）
+const backupRemaining = ref(0);
+const backupUsed = ref(0);
+const backupTotal = computed(() => backupRemaining.value + backupUsed.value);
 const totpEnableForm = reactive({code: ""});
 const totpDisableForm = reactive({password: ""});
+const totpResetFormRef = ref<FormInst | null>(null);
+const totpResetForm = reactive({password: ""});
+const totpResetLoading = ref(false);
 
 const totpEnableRules: FormRules = {
   code: {required: true, message: "请输入动态码", trigger: ["input", "blur"]},
 };
 const totpDisableRules: FormRules = {
+  password: {required: true, message: "请输入当前密码", trigger: ["input", "blur"]},
+};
+const totpResetRules: FormRules = {
   password: {required: true, message: "请输入当前密码", trigger: ["input", "blur"]},
 };
 
@@ -310,6 +358,8 @@ const loadTotpStatus = async () => {
     totpLoading.value = true;
     const status = await auth.totpStatus();
     totpPhase.value = status.enabled ? "enabled" : "off";
+    backupRemaining.value = status.backupRemaining;
+    backupUsed.value = status.backupUsed;
   } catch (error: unknown) {
     message.error(getErrorMessage(error, "获取两步验证状态失败"));
   } finally {
@@ -348,6 +398,8 @@ const handleTotpEnable = async () => {
   try {
     totpEnableLoading.value = true;
     backupCodes.value = await auth.totpEnable(totpEnableForm.code.trim());
+    backupRemaining.value = backupCodes.value.length;
+    backupUsed.value = 0;
     setupSecret.value = "";
     qrDataUrl.value = "";
     totpEnableForm.code = "";
@@ -357,6 +409,59 @@ const handleTotpEnable = async () => {
     message.error(getErrorMessage(error, "动态码错误，开启失败"));
   } finally {
     totpEnableLoading.value = false;
+  }
+};
+
+/** 将一次性备用码导出为 txt 文档下载，便于离线妥善保存。 */
+const downloadBackupCodes = () => {
+  const codes = backupCodes.value;
+  if (!codes || !codes.length) return;
+
+  const username = auth.user?.username ?? "账号";
+  const generatedAt = new Date();
+  const stamp = formatTimestamp(generatedAt);
+
+  const content = [
+    "接待管理系统 — 两步验证备用恢复码",
+    "========================================",
+    "",
+    `账号：${username}`,
+    `生成时间：${formatDisplayTime(generatedAt)}`,
+    "",
+    "备用码（每枚仅可使用一次）：",
+    ...codes.map((code) => `  ${code}`),
+    "",
+    "========================================",
+    "重要提示：",
+    "- 每枚备用码只能使用一次，使用后即作废。",
+    "- 请妥善保管此文件，切勿泄露给他人。",
+    '- 丢失验证设备时，可在两步登录页选择「使用备用码」登录。',
+    "- 这些备用码仅本次显示，关闭两步验证后无法再次查看。",
+  ].join("\n");
+
+  downloadTextFile(`备用恢复码-${username}-${stamp}.txt`, content);
+};
+
+/** 手动重置备用码：校验当前密码后向服务端换发新的一组 10 枚备用码，旧备用码全部失效。 */
+const handleTotpResetBackup = async () => {
+  try {
+    await totpResetFormRef.value?.validate();
+  } catch {
+    return;
+  }
+  try {
+    totpResetLoading.value = true;
+    const codes = await auth.totpResetBackup(totpResetForm.password);
+    backupCodes.value = codes;
+    backupRemaining.value = codes.length;
+    backupUsed.value = 0;
+    totpResetForm.password = "";
+    totpResetFormRef.value?.restoreValidation();
+    message.success("备用码已重置，请妥善保存");
+  } catch (error: unknown) {
+    message.error(getErrorMessage(error, "重置备用码失败"));
+  } finally {
+    totpResetLoading.value = false;
   }
 };
 
@@ -485,6 +590,26 @@ onMounted(() => {
 .backup-tag {
   font-family: monospace;
   font-size: 15px;
+}
+
+.backup-stat {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  font-size: 14px;
+  color: #555;
+}
+
+.backup-stat b {
+  color: #6366f1;
+}
+
+.backup-exhausted {
+  font-size: 13px;
 }
 
 @media (max-width: 768px) {

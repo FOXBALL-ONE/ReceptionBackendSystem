@@ -89,12 +89,16 @@ class AccountService(
 
     /**
      * 两步验证状态：enabled=已启用；pending=已生成密钥但尚未确认启用。
+     * 启用时附带备用码剩余/已用数量（用于 UI 提示与判断是否需要重置）。
      */
     fun totpStatus(userId: Long): TotpStatus {
         val user = loadUser(userId)
+        val enabled = user.totpEnabled == true
         return TotpStatus(
-            enabled = user.totpEnabled == true,
+            enabled = enabled,
             pending = user.totpEnabled != true && user.totpSecret != null,
+            backupRemaining = if (enabled) countLines(user.totpBackupCodes) else 0,
+            backupUsed = if (enabled) countLines(user.totpBackupCodesUsed) else 0,
         )
     }
 
@@ -135,6 +139,27 @@ class AccountService(
         user.totpLastUsed = null
         val codes = generateBackupCodes(BACKUP_CODE_COUNT)
         user.totpBackupCodes = codes.joinToString("\n") { passwordEncoder.encode(it)!! }
+        user.totpBackupCodesUsed = null
+        userRepository.save(user)
+        return codes
+    }
+
+    /**
+     * 手动重置备用码：需当前密码确认；生成新的 10 枚备用码，旧备用码（含已用记录）全部失效。
+     * 新备用码明文仅此一次返回。
+     */
+    @Transactional
+    fun totpResetBackupCodes(userId: Long, password: String?): List<String> {
+        val user = loadUser(userId)
+        if (user.totpEnabled != true) {
+            throw ParamErrorException("请先开启两步验证")
+        }
+        if (!passwordEncoder.matches(password ?: "", user.password)) {
+            throw ParamErrorException("密码错误")
+        }
+        val codes = generateBackupCodes(BACKUP_CODE_COUNT)
+        user.totpBackupCodes = codes.joinToString("\n") { passwordEncoder.encode(it)!! }
+        user.totpBackupCodesUsed = null
         userRepository.save(user)
         return codes
     }
@@ -151,6 +176,7 @@ class AccountService(
         user.totpSecret = null
         user.totpEnabled = false
         user.totpBackupCodes = null
+        user.totpBackupCodesUsed = null
         user.totpLastUsed = null
         userRepository.save(user)
     }
@@ -159,19 +185,33 @@ class AccountService(
         userRepository.findById(userId).orElse(null)
             ?: throw ResourceNotFoundException("用户不存在")
 
-    /** 生成 count 个格式为 XXXX-XXXX 的十六进制备用码。 */
-    private fun generateBackupCodes(count: Int): List<String> =
-        (1..count).map {
-            val hex = ByteArray(BACKUP_CODE_BYTES).also { SECURE_RANDOM.nextBytes(it) }
-                .joinToString("") { byte -> "%02X".format(byte) }
-            "${hex.take(4)}-${hex.drop(4)}"
+    /**
+     * 生成 count 个 5 位随机备用码（去除易混淆字符 0/O/1/I/L 的大写字母+数字）。
+     * 集合内去重，避免向用户展示重复码。
+     */
+    private fun generateBackupCodes(count: Int): List<String> {
+        val codes = linkedSetOf<String>()
+        while (codes.size < count) {
+            codes.add(generateBackupCode())
         }
+        return codes.toList()
+    }
+
+    private fun generateBackupCode(): String =
+        (1..BACKUP_CODE_LENGTH).joinToString("") {
+            BACKUP_CODE_CHARSET[SECURE_RANDOM.nextInt(BACKUP_CODE_CHARSET.length)].toString()
+        }
+
+    /** 统计换行分隔的哈希列表条数（空/null 视为 0）。 */
+    private fun countLines(value: String?): Int =
+        value?.split("\n")?.count { it.trim().isNotBlank() } ?: 0
 
     private companion object {
         private const val PASSWORD_MIN_LENGTH = 6
         private const val USERNAME_MAX_LENGTH = 64
         private const val BACKUP_CODE_COUNT = 10
-        private const val BACKUP_CODE_BYTES = 4
+        private const val BACKUP_CODE_LENGTH = 5
+        private const val BACKUP_CODE_CHARSET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
         private val SECURE_RANDOM = SecureRandom()
     }
 }
@@ -180,6 +220,8 @@ class AccountService(
 data class TotpStatus(
     val enabled: Boolean,
     val pending: Boolean,
+    val backupRemaining: Int = 0,
+    val backupUsed: Int = 0,
 )
 
 /** 两步验证设置视图：明文密钥与 otpauth URI（前端画二维码）。 */

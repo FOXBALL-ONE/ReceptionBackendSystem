@@ -49,9 +49,13 @@ data class User(
     @Column(name = "totp_enabled")
     var totpEnabled: Boolean? = false,
 
-    /** 备用码（每行一个 BCrypt 哈希），开启两步验证时生成。 */
+    /** 备用码（每行一个 BCrypt 哈希），开启两步验证时生成；命中即移除。 */
     @Column(name = "totp_backup_codes", length = 4000)
     var totpBackupCodes: String? = null,
+
+    /** 已使用的备用码哈希（每行一个 BCrypt 哈希），用于记录消耗与统计剩余。 */
+    @Column(name = "totp_backup_codes_used", length = 4000)
+    var totpBackupCodesUsed: String? = null,
 
     /** 上次成功使用的 TOTP 时间步，用于防重放。 */
     @Column(name = "totp_last_used")

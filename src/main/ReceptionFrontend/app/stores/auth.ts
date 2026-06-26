@@ -127,10 +127,10 @@ export const useAuthStore = defineStore("auth", {
             await post("/account/password", {oldPassword, newPassword}, {payloadMode: "json"});
         },
 
-        /** 两步验证状态 */
-        async totpStatus(): Promise<{ enabled: boolean; pending: boolean }> {
+        /** 两步验证状态（含备用码剩余/已用数量） */
+        async totpStatus(): Promise<{ enabled: boolean; pending: boolean; backupRemaining: number; backupUsed: number }> {
             const {get} = useHttp();
-            return await get<{ enabled: boolean; pending: boolean }>("/account/totp/status");
+            return await get<{ enabled: boolean; pending: boolean; backupRemaining: number; backupUsed: number }>("/account/totp/status");
         },
 
         /** 发起两步验证设置，返回明文密钥与 otpauth URI */
@@ -146,7 +146,15 @@ export const useAuthStore = defineStore("auth", {
         /** 确认启用两步验证，返回一次性备用码 */
         async totpEnable(code: string): Promise<string[]> {
             const {post} = useHttp();
-            return await post<string[]>("/account/totp/enable", {code}, {payloadMode: "json"});
+            const result = await post<{backupCodes: string[]}>("/account/totp/enable", {code}, {payloadMode: "json"});
+            return result.backupCodes;
+        },
+
+        /** 重置备用码（需当前密码），返回新的一次性备用码 */
+        async totpResetBackup(password: string): Promise<string[]> {
+            const {post} = useHttp();
+            const result = await post<{backupCodes: string[]}>("/account/totp/backup/reset", {password}, {payloadMode: "json"});
+            return result.backupCodes;
         },
 
         /** 关闭两步验证 */
