@@ -39,12 +39,13 @@ data class Person(
     @Column(name = "nick_name")
     var nickName: String? = null,
 
-    /** 人员颜色分组。 */
+    /** 人员颜色分组标签，用于人员分类着色；不参与 JSON 序列化。 */
     @JsonbTransient
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "color_tag_id")
     var colorTag: ColorTag? = null,
 
+    /** 关联的考察组身份 ID，用于人员与考察组绑定；可空。 */
     @Column(name = "inspection_team_item_id")
     var inspectionTeamItemId: Long? = null,
 )

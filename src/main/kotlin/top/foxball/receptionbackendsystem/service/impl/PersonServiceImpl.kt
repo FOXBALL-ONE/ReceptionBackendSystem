@@ -10,6 +10,13 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.PersonRepository
 import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import top.foxball.receptionbackendsystem.service.PersonService
 
+/**
+ * 人员服务实现，操作 [Person] 实体。
+ *
+ * 所有写方法均通过基类 [AbstractReceptionService] 包装为单事务。
+ * [saveByActivity] 以「按活动整体覆盖」语义重建该活动的人员列表：清空既有集合后按请求重建，
+ * 借助活动实体的 orphanRemoval 级联清理被移除的人员。覆盖保存过程中会回填人员颜色分组（按 id/名称/颜色多重匹配）。
+ */
 @Service
 class PersonServiceImpl(
     private val personRepository: PersonRepository,
@@ -17,6 +24,7 @@ class PersonServiceImpl(
 ) : AbstractReceptionService<Person, Int>(personRepository), PersonService {
     private val log = LoggerFactory.getLogger(this.javaClass)
 
+    /** 按活动查询其下全部人员，并记录查询日志与样本 id。 */
     @Transactional(readOnly = true)
     override fun findByActivityId(activityId: Long): List<Person> {
         log.info("开始查询人员列表: activityId={}", activityId)
@@ -30,14 +38,25 @@ class PersonServiceImpl(
         return persons
     }
 
+    /** 按姓名关键字模糊匹配人员。 */
     @Transactional(readOnly = true)
     override fun findByNameContaining(name: String): List<Person> =
         personRepository.findByNameContaining(name)
 
+    /** 按活动与单位查询人员。 */
     @Transactional(readOnly = true)
     override fun findByActivityIdAndUnit(activityId: Long, unit: String): List<Person> =
         personRepository.findByActivityIdAndUnit(activityId, unit)
 
+    /**
+     * 整体覆盖保存某活动的人员列表。
+     *
+     * 步骤：1) 加载活动并按 id 建立既有人员索引、活动下人员类型颜色分组索引；
+     * 2) 逐人归一化：命中 id 复用既有实体做更新，否则新建，并回填活动引用与字段；
+     *    颜色分组按 [ColorTag.resolveIn] 在 id/名称/颜色之间多重匹配；
+     * 3) 清空 [Activities.personList] 后整体替换为归一化结果并保存活动。
+     * 全程记录关键步骤日志与样本 id，便于排障。
+     */
     @Transactional
     override fun saveByActivity(activityId: Long, persons: List<Person>): List<Person> {
         log.info(

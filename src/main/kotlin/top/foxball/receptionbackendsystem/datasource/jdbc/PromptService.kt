@@ -16,11 +16,13 @@ import java.time.LocalDateTime
 @Table(name = "prompt_service")
 @Entity
 data class PromptService (
+    /** 提示服务配置主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Int? = null,
 
+    /** 所属活动，删除活动时由数据库级联删除提示服务配置。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)
@@ -60,8 +62,13 @@ data class PromptService (
  * 工作人员分组。
  */
 data class StaffItem(
+    /** 分组名称。 */
     var name: String? = null,
+
+    /** 分组颜色标签标识。 */
     var colorTag: String? = null,
+
+    /** 分组下的人员列表。 */
     var groupList: MutableList<OneStaff> = mutableListOf(),
 )
 
@@ -69,8 +76,13 @@ data class StaffItem(
  * 单个工作人员。
  */
 data class OneStaff(
+    /** 工作人员姓名。 */
     var name: String? = null,
+
+    /** 工作人员职务或职责。 */
     var duty: String? = null,
+
+    /** 工作人员联系电话。 */
     var phone: String? = null,
 )
 
@@ -78,8 +90,13 @@ data class OneStaff(
  * 注意事项。
  */
 data class NoteItem(
+    /** 注意事项标题。 */
     var title: String? = null,
+
+    /** 注意事项内容。 */
     var content: String? = null,
+
+    /** 注意事项颜色标签标识。 */
     var colorTag: String? = null,
 )
 
@@ -87,8 +104,15 @@ data class NoteItem(
  * 天气提示。
  */
 data class WeatherItem(
+    /** 天气提示对应的日期或时间。 */
     var time: LocalDateTime? = null,
+
+    /** 城市。 */
     var city: String? = null,
+
+    /** 温度描述。 */
     var temperature: String? = null,
+
+    /** 天气现象描述。 */
     var weatherDescriptor: String? = null,
 )

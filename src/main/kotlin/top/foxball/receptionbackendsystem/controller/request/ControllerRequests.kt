@@ -15,32 +15,39 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.StaffItem
 import top.foxball.receptionbackendsystem.datasource.jdbc.WeatherItem
 import java.time.LocalDateTime
 
+/** 整型 id 请求体 */
 data class IntIdRequest(
     val id: Int? = null,
 )
 
+/** 长整型 id 请求体 */
 data class LongIdRequest(
     val id: Long? = null,
 )
 
+/** 整型 id 批量请求体 */
 data class IntIdsRequest(
     val ids: List<Int> = emptyList(),
 )
 
+/** 长整型 id 批量请求体 */
 data class LongIdsRequest(
     val ids: List<Long> = emptyList(),
 )
 
+/** 活动 id 请求体 */
 data class ActivityIdRequest(
     val activityId: Long? = null,
     val type: String? = null,
 )
 
+/** 活动开放状态切换请求体 */
 data class ActivityOpenRequest(
     val id: Long? = null,
     val isOpen: Boolean? = null,
 )
 
+/** 活动基础信息保存请求体 */
 data class ActivityBasicSaveRequest(
     val id: Long? = null,
     val url: String? = null,
@@ -57,6 +64,7 @@ data class ActivityBasicSaveRequest(
     val technicalSupport: String? = null,
     val isOpen: Boolean? = null,
 ) {
+    /** 映射为活动实体。 */
     fun toEntity(): Activities =
         Activities(
             id = id,
@@ -76,20 +84,24 @@ data class ActivityBasicSaveRequest(
         )
 }
 
+/** url 请求体 */
 data class UrlRequest(
     val url: String? = null,
 )
 
+/** 名称请求体 */
 data class NameRequest(
     val name: String? = null,
 )
 
+/** 活动名称请求体 */
 data class ActivityNameRequest(
     val activityId: Long? = null,
     val name: String? = null,
     val type: String? = null,
 )
 
+/** 颜色标签保存请求体 */
 data class ColorTagSaveRequest(
     val activityId: Long? = null,
     val id: Int? = null,
@@ -97,6 +109,7 @@ data class ColorTagSaveRequest(
     val color: String? = null,
     val type: String? = null,
 ) {
+    /** 映射为颜色标签实体。 */
     fun toEntity(): ColorTag =
         ColorTag(
             id = id,
@@ -106,20 +119,24 @@ data class ColorTagSaveRequest(
         )
 }
 
+/** 活动单位请求体 */
 data class ActivityUnitRequest(
     val activityId: Long? = null,
     val unit: String? = null,
 )
 
+/** 活动车号请求体 */
 data class ActivityCarNumberRequest(
     val activityId: Long? = null,
     val carNumber: Long? = null,
 )
 
+/** 日程标签请求体 */
 data class ScheduleTagsRequest(
     val scheduleTags: String? = null,
 )
 
+/** 日程保存请求体 */
 data class ScheduleSaveRequest(
     val activityId: Long? = null,
     val schedules: List<Schedule> = emptyList(),
@@ -135,6 +152,7 @@ data class InspectionTeamSaveRequest(
     val items: List<InspectionTeamItemDto> = emptyList(),
 )
 
+/** 考察组身份 DTO：id 跨天唯一，附带各天行程。 */
 data class InspectionTeamItemDto(
     val id: Long? = null,
     val name: String? = null,
@@ -151,32 +169,38 @@ data class InspectionTeamItineraryDto(
     val eventArrangements: List<EventArrangementsItem> = emptyList(),
 )
 
+/** 人员保存请求体 */
 data class PersonSaveRequest(
     val activityId: Long? = null,
     val persons: List<Person> = emptyList(),
 )
 
+/** 餐饮保存请求体 */
 data class MealSaveRequest(
     val activityId: Long? = null,
     val meals: List<Meal> = emptyList(),
 )
 
+/** 住宿保存请求体 */
 data class LodgingSaveRequest(
     val activityId: Long? = null,
     val colorTags: List<ColorTag> = emptyList(),
     val lodgings: List<Lodging> = emptyList(),
 )
 
+/** 考察点位保存请求体 */
 data class InspectionPointSaveRequest(
     val activityId: Long? = null,
     val inspectionPoints: List<InspectionPoint> = emptyList(),
 )
 
+/** 车辆保存请求体 */
 data class CarSaveRequest(
     val activityId: Long? = null,
     val cars: List<Car> = emptyList(),
 )
 
+/** 提示服务保存请求体 */
 data class PromptServiceSaveRequest(
     val activityId: Long? = null,
     val id: Int? = null,
@@ -187,6 +211,7 @@ data class PromptServiceSaveRequest(
     val attendanceInstructionsTitle: String? = null,
     val attendanceInstructionsContent: String? = null,
 ) {
+    /** 映射为提示服务实体。 */
     fun toEntity(): PromptService =
         PromptService(
             id = id,
@@ -199,6 +224,7 @@ data class PromptServiceSaveRequest(
         )
 }
 
+/** 实体批量保存请求体 */
 data class EntityBatchRequest<T>(
     val activityId: Long? = null,
     val items: List<T> = emptyList(),

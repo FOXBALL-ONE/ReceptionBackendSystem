@@ -12,12 +12,18 @@ import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 import java.time.LocalDateTime
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 
+/**
+ * 活动控制器，挂在 /api/activities 下。
+ *
+ * 管理活动基础配置与开放状态，提供单条/批量保存与更新、删除、列表、按 id/活动 id/ url 查询、存在性校验等端点。
+ */
 @RestController
 @RequestMapping("/api/activities")
 class ActivitiesController(
     private val activitiesService: ActivitiesService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    /** 更新活动对外开关状态。 */
     @PostMapping("/update-is-open")
     fun updateIsOpen(@RequestBody request: ActivityOpenRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -34,6 +40,7 @@ class ActivitiesController(
             .build()
     }
 
+    /** 新增活动基础信息并返回。 */
     @PostMapping("/save-one")
     fun saveOne(@RequestBody request: ActivityBasicSaveRequest): ResponseEntity<ApiResponse> {
         val activity = activitiesService.saveBasic(request.toEntity())
@@ -97,6 +104,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量新增活动基础信息并返回。 */
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<Activities>): ResponseEntity<ApiResponse> {
         val activities = activitiesService.saveBatch(request.items)
@@ -162,6 +170,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 更新活动基础信息并返回。 */
     @PostMapping("/update-one")
     fun updateOne(@RequestBody request: ActivityBasicSaveRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -226,6 +235,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量更新活动基础信息并返回。 */
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<Activities>): ResponseEntity<ApiResponse> {
         val activities = activitiesService.updateBatch(request.items)
@@ -291,14 +301,17 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 删除单条活动。 */
     @PostMapping("/delete-one")
     fun deleteOne(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, activitiesService)
 
+    /** 按 id 列表批量删除活动。 */
     @PostMapping("/delete-batch")
     fun deleteBatch(@RequestBody request: LongIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, activitiesService)
 
+    /** 按 id 查询单条活动，未找到返回 notFound。 */
     @PostMapping("/find-by-id")
     fun findById(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -363,6 +376,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 查询所有活动。 */
     @PostMapping("/list")
     fun list(): ResponseEntity<ApiResponse> {
         val activities = activitiesService.findAllActivities()
@@ -428,6 +442,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 查询所有活动（等价于 list）。 */
     @PostMapping("/find-all")
     fun findAll(): ResponseEntity<ApiResponse> {
         val activities = activitiesService.findAllActivities()
@@ -493,6 +508,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 查询活动详情。 */
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -559,6 +575,7 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 url 查询活动详情。 */
     @PostMapping("/find-by-url")
     fun findByUrl(@RequestBody request: UrlRequest): ResponseEntity<ApiResponse> {
         val url = request.url?.takeIf { it.isNotBlank() } ?: return badRequest("url is required")
@@ -625,12 +642,14 @@ class ActivitiesController(
         return builder.ok().data(rs).build()
     }
 
+    /** 校验指定 url 的活动是否已存在。 */
     @PostMapping("/exists-by-url")
     fun existsByUrl(@RequestBody request: UrlRequest): ResponseEntity<ApiResponse> {
         val url = request.url?.takeIf { it.isNotBlank() } ?: return badRequest("url is required")
         return ok(activitiesService.existsByUrl(url))
     }
 
+    /** 查询所有已开放活动。 */
     @PostMapping("/find-open")
     fun findOpen(): ResponseEntity<ApiResponse> {
         val activities = activitiesService.findOpenActivities()

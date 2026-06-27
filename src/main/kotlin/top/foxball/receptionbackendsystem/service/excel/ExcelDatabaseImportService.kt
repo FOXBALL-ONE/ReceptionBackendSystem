@@ -39,6 +39,14 @@ import java.time.Year
 import java.util.UUID
 import kotlin.random.Random
 
+/**
+ * 整库 Excel 导入服务。
+ *
+ * 把一个填写好的 Excel 工作簿（9 个 sheet）解析为各分项内存模型，再装配为一个完整的
+ * [top.foxball.receptionbackendsystem.datasource.jdbc.Activities] 及其下属实体并落库。
+ * 各 sheet 的解析委托给对应的单 sheet 服务（[PersonnelExcelService] 等），
+ * 这里负责按列名映射实体、生成考察组颜色标签、回填考察组归属与日程行程。
+ */
 @Service
 class ExcelDatabaseImportService(
     private val activitiesRepository: ActivitiesRepository,
@@ -52,6 +60,10 @@ class ExcelDatabaseImportService(
     private val attendanceGuidelinesExcelService: AttendanceGuidelinesExcelService,
     private val overviewExcelService: OverviewOfTheCityAndCountyExcelService,
 ) {
+    /**
+     * 从文件路径导入工作簿并新建/替换活动，整体在单事务内完成。
+     * 当 [ExcelDatabaseImportOptions.replaceExistingByUrl] 为真且 url 命中旧活动时，先删除再导入。
+     */
     @Transactional
     fun importExcel(filePath: String, options: ExcelDatabaseImportOptions = ExcelDatabaseImportOptions()): ExcelDatabaseImportResult {
         val parsed = ParsedExcelWorkbook(
@@ -69,6 +81,10 @@ class ExcelDatabaseImportService(
         return saveParsedWorkbook(parsed, options)
     }
 
+    /**
+     * 从上传文件导入工作簿并新建/替换活动，整体在单事务内完成。
+     * 文件名（去扩展名）在 [ExcelDatabaseImportOptions.name] 缺省时回填为活动名。
+     */
     @Transactional
     fun importExcel(file: MultipartFile, options: ExcelDatabaseImportOptions = ExcelDatabaseImportOptions()): ExcelDatabaseImportResult {
         val bytes = file.bytes
@@ -93,6 +109,11 @@ class ExcelDatabaseImportService(
         return saveParsedWorkbook(parsed, resolvedOptions)
     }
 
+    /**
+     * 把解析后的工作簿装配为活动实体并落库。
+     * 流程：按 url 可选替换旧活动 → 推断开始时间 → 组装各子实体并按考察组分配颜色标签
+     * → 落库后回填考察组主键到人员/住宿快照（导出时只存 JSON 快照）。
+     */
     private fun saveParsedWorkbook(
         parsed: ParsedExcelWorkbook,
         options: ExcelDatabaseImportOptions,
@@ -177,6 +198,7 @@ class ExcelDatabaseImportService(
         )
     }
 
+    /** 回填各子实体到活动的外键，确保级联保存顺序正确（包括考察组→行程的双向关联）。 */
     private fun bindActivityChildren(activity: Activities) {
         activity.personList.forEach { it.activity = activity }
         activity.carList.forEach { it.activity = activity }
@@ -465,6 +487,7 @@ class ExcelDatabaseImportService(
     }
 }
 
+/** 导入参数：可指定活动 url/名称/标题/时间等，缺省项由导入逻辑推断。 */
 data class ExcelDatabaseImportOptions(
     val url: String? = null,
     val name: String? = null,
@@ -479,6 +502,7 @@ data class ExcelDatabaseImportOptions(
     val replaceExistingByUrl: Boolean = false,
 )
 
+/** 导入结果：新活动的主键/url，以及各分项实际导入条数（供前端展示导入摘要）。 */
 data class ExcelDatabaseImportResult(
     val activityId: Long?,
     val url: String?,
@@ -493,6 +517,7 @@ data class ExcelDatabaseImportResult(
     val overviewCount: Int,
 )
 
+/** 9 个 sheet 解析后的中间聚合体，供 [saveParsedWorkbook] 装配实体使用。 */
 private data class ParsedExcelWorkbook(
     val personnel: List<PersonnelItem>,
     val cars: List<CarItem>,

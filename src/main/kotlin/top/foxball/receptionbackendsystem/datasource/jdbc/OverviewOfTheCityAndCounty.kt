@@ -23,11 +23,13 @@ import org.hibernate.type.SqlTypes
 @Table(name = "overview_of_the_city_and_county")
 @Entity
 data class OverviewOfTheCityAndCounty(
+    /** 市县概况主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Int? = null,
 
+    /** 所属活动，删除活动时由数据库级联删除概况记录。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)

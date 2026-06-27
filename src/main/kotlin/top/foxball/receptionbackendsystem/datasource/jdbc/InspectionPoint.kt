@@ -13,11 +13,13 @@ import org.hibernate.annotations.OnDeleteAction
 @Table(name = "inspection_point")
 @Entity
 class InspectionPoint(
+    /** 考察点主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Int? = null,
 
+    /** 所属活动，删除活动时由数据库级联删除考察点记录。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)

@@ -16,12 +16,18 @@ import top.foxball.receptionbackendsystem.service.ColorTagService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 
+/**
+ * 颜色标签控制器，挂在 /api/color-tags 下。
+ *
+ * 提供单条/批量保存与更新、删除、按活动/名称查询、名称存在性校验等颜色标签的增删改查端点。
+ */
 @RestController
 @RequestMapping("/api/color-tags")
 class ColorTagController(
     private val colorTagService: ColorTagService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    /** 按活动保存单条颜色标签并返回。 */
     @PostMapping("/save-one")
     fun saveOne(@RequestBody request: ColorTagSaveRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -46,6 +52,7 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动批量保存颜色标签并返回。 */
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -72,6 +79,7 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动更新单条颜色标签并返回。 */
     @PostMapping("/update-one")
     fun updateOne(@RequestBody request: ColorTagSaveRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -96,6 +104,7 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动批量更新颜色标签并返回。 */
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<ColorTag>): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -122,14 +131,17 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 删除单条颜色标签。 */
     @PostMapping("/delete-one")
     fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, colorTagService)
 
+    /** 按 id 列表批量删除颜色标签。 */
     @PostMapping("/delete-batch")
     fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, colorTagService)
 
+    /** 按 id 查询单条颜色标签，未找到返回 notFound。 */
     @PostMapping("/find-by-id")
     fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -154,6 +166,7 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 查询颜色标签，可选按 type 过滤。 */
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -183,6 +196,7 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 与名称查询单条颜色标签，可选叠加 type 精确匹配。 */
     @PostMapping("/find-by-name")
     fun findByName(@RequestBody request: ActivityNameRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -213,6 +227,7 @@ class ColorTagController(
         return builder.ok().data(rs).build()
     }
 
+    /** 校验活动下指定名称的颜色标签是否存在，可选叠加 type 精确匹配。 */
     @PostMapping("/exists-by-name")
     fun existsByName(@RequestBody request: ActivityNameRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")

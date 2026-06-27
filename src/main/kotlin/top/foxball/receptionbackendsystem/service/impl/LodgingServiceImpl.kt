@@ -13,6 +13,14 @@ import top.foxball.receptionbackendsystem.service.LodgingSaveResult
 import top.foxball.receptionbackendsystem.service.LodgingService
 import java.util.IdentityHashMap
 
+/**
+ * 住宿服务实现，操作 [Lodging] 实体。
+ *
+ * 住宿与住宿类型颜色分组 [ColorTag]（TYPE_LODGING）一同按活动整体覆盖保存，
+ * 同时保留活动下其它类型（如人员）的颜色分组不被影响。
+ * 所有写方法均通过基类 [AbstractReceptionService] 包装为单事务。
+ * [saveByActivity] 借助活动实体的 orphanRemoval 级联清理被移除的住宿记录与旧住宿分组。
+ */
 @Service
 class LodgingServiceImpl(
     private val lodgingRepository: LodgingRepository,
@@ -20,6 +28,7 @@ class LodgingServiceImpl(
 ) : AbstractReceptionService<Lodging, Int>(lodgingRepository), LodgingService {
     private val log = LoggerFactory.getLogger(this.javaClass)
 
+    /** 按活动查询其下全部住宿，并记录查询日志与样本 id。 */
     @Transactional(readOnly = true)
     override fun findByActivityId(activityId: Long): List<Lodging> {
         log.info("开始查询住宿列表: activityId={}", activityId)
@@ -33,6 +42,20 @@ class LodgingServiceImpl(
         return lodgings
     }
 
+    /**
+     * 整体覆盖保存某活动的住宿列表及其颜色分组。
+     *
+     * 步骤：
+     * 1) 加载活动，将颜色分组拆为「非住宿类型（保留）」与「既有住宿类型」两份，并建立住宿分组的 id/名称/颜色多重索引；
+     *    请求中混入的非住宿类型分组按名称或颜色回退匹配住宿分组并告警；
+     * 2) 归一化颜色分组：优先按名称/颜色在「本次归一化结果」与「既有住宿分组」间匹配复用，再回退 id 命中，最后新建；
+     *    维护原始请求到归一化实体的映射，供后续住宿引用解析；
+     * 3) 归一化住宿：按 id 复用既有实体做更新，否则新建；房间号、人员快照按请求覆盖，
+     *    分组引用经 [ColorTag.resolveIn] 在「原始映射 / id / 名称 / 颜色」间多重解析；
+     * 4) 清空 [Activities.hostedList] 与 [Activities.colorTagList]，先写回保留的非住宿分组，再追加归一化住宿分组与住宿；
+     * 5) 保存活动后返回住宿分组与住宿两份结果。
+     * 全程记录关键步骤日志与样本 id，便于排障。
+     */
     @Transactional
     override fun saveByActivity(
         activityId: Long,

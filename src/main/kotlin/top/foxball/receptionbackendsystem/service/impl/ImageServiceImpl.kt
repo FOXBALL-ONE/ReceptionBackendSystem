@@ -18,6 +18,13 @@ import java.security.MessageDigest
 import java.util.HexFormat
 import javax.imageio.ImageIO
 
+/**
+ * 图片服务实现，操作 [Image] 实体。
+ *
+ * 负责图片文件落盘与元数据入库：以活动为单位建立存储目录，按 SHA-256 去重命名，
+ * 并校验路径必须位于配置的存储根目录之内，防止目录穿越。
+ * 所有写方法均通过基类 [AbstractReceptionService] 包装为单事务。
+ */
 @Service
 class ImageServiceImpl(
     private val imageRepository: ImageRepository,
@@ -26,26 +33,40 @@ class ImageServiceImpl(
 ) : AbstractReceptionService<Image, Long>(imageRepository), ImageService {
     private val extensionPattern = Regex("[A-Za-z0-9]{1,16}")
 
+    /** 查询全部未软删的图片，按创建时间倒序。 */
     @Transactional(readOnly = true)
     override fun findAllActive(): List<Image> =
         imageRepository.findByIsDeletedFalseOrderByCreatedAtDesc()
 
+    /** 按主键查询未软删的图片。 */
     @Transactional(readOnly = true)
     override fun findActiveById(id: Long): Image? =
         imageRepository.findByIdAndIsDeletedFalse(id)
 
+    /** 按活动查询其下全部图片（含软删）。 */
     @Transactional(readOnly = true)
     override fun findByActivityId(activityId: Long): List<Image> =
         imageRepository.findByActivityId(activityId)
 
+    /** 按活动查询其下未软删的图片。 */
     @Transactional(readOnly = true)
     override fun findByActivityIdAndIsDeletedFalse(activityId: Long): List<Image> =
         imageRepository.findByActivityIdAndIsDeletedFalse(activityId)
 
+    /** 按 SHA-256 查询未软删的图片，用于上传去重判断。 */
     @Transactional(readOnly = true)
     override fun findBySha256AndIsDeletedFalse(sha256: String): Image? =
         imageRepository.findBySha256AndIsDeletedFalse(sha256)
 
+    /**
+     * 上传图片：落盘并入库元数据。
+     *
+     * 步骤：1) 校验文件非空、活动存在；
+     * 2) 在存储根下按活动 id 建目录，并校验路径未越界；
+     * 3) 写入临时文件并同步计算 SHA-256、读取图片尺寸，借此判断是否为合法图片；
+     * 4) 解析扩展名（优先文件名后缀，回退 Content-Type 映射），以 SHA-256 为名原子移动到目标路径；
+     * 5) 落库图片元数据（路径、尺寸、上传人、用途等）；异常时清理临时文件。
+     */
     @Transactional
     override fun uploadImage(
         activityId: Long,
@@ -104,6 +125,7 @@ class ImageServiceImpl(
         }
     }
 
+    /** 按 id 软删图片（置 [Image.isDeleted] 为 true），未找到返回 false。 */
     @Transactional
     override fun softDeleteById(id: Long): Boolean {
         val image = imageRepository.findByIdAndIsDeletedFalse(id) ?: return false
@@ -112,6 +134,7 @@ class ImageServiceImpl(
         return true
     }
 
+    /** 解析图片在磁盘上的绝对路径，并校验路径仍在存储根目录之内。 */
     override fun resolveFile(image: Image): Path {
         val relativePath = image.objectKey.ifBlank { image.storagePath }
         val file = imageStorageProperties.storageRoot()
@@ -121,6 +144,7 @@ class ImageServiceImpl(
         return file
     }
 
+    /** 基于配置的 baseUrl 与图片相对路径拼装对外可访问 URL。 */
     override fun buildAccessUrl(image: Image): String {
         val relativePath = image.objectKey.ifBlank { image.storagePath }
         val baseUrl = imageStorageProperties.baseUrl.trimEnd('/')

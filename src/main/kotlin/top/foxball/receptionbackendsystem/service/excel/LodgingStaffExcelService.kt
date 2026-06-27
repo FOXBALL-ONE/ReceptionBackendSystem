@@ -9,20 +9,35 @@ import top.foxball.receptionbackendsystem.datasource.excel.Staff
 import java.io.FileInputStream
 import java.io.InputStream
 
+/**
+ * 工作人员分组的 Excel 导入服务。
+ *
+ * 读取工作簿第 5 个 sheet（index=4，"工作人员"），表头占前 2 行（headRowNumber=2）；
+ * 按 [LodgingStaffExcelRow] 列结构解析为扁平行后按"单位"分组为 [LodgingStaff]（每组含成员列表）。
+ * 该结果最终汇入活动下属的 [top.foxball.receptionbackendsystem.datasource.jdbc.PromptService]
+ * 的 staffList 字段，而非独立实体。
+ */
 @Service
 class LodgingStaffExcelService {
+    /** 从文件路径读取工作人员 sheet。 */
     fun importLodgingStaff(filePath: String): List<LodgingStaff> {
         return FileInputStream(filePath).use { inputStream ->
             importLodgingStaff(inputStream)
         }
     }
 
+    /** 从上传文件读取工作人员 sheet。 */
     fun importLodgingStaff(file: MultipartFile): List<LodgingStaff> {
         return file.inputStream.use { inputStream ->
             importLodgingStaff(inputStream)
         }
     }
 
+    /**
+     * 读取"工作人员" sheet（表头 2 行）并按单位分组合并。
+     * 单位列非空视为新组起始行；后续无单位行的联系方式挂到当前组，
+     * 联系方式中的手机号用 [PhoneRegex] 抽出，剩余部分作为姓名。
+     */
     fun importLodgingStaff(inputStream: InputStream): List<LodgingStaff> {
         val rows = EasyExcel.read(inputStream)
             .head(LodgingStaffExcelRow::class.java)

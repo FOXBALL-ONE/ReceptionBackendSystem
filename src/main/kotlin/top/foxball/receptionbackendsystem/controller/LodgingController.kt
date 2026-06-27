@@ -18,6 +18,12 @@ import top.foxball.receptionbackendsystem.service.LodgingService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 
+/**
+ * 住宿安排控制器，挂在 /api/lodgings 下。
+ *
+ * 提供按活动整体保存（含颜色标签与住宿记录）、单条/批量保存与更新、删除、按活动/ id 查询等端点；
+ * 关键操作附带日志，便于排查批量保存异常。
+ */
 @RestController
 @RequestMapping("/api/lodgings")
 class LodgingController(
@@ -26,6 +32,7 @@ class LodgingController(
 ) : ControllerSupport(builder) {
     private val log = LoggerFactory.getLogger(this.javaClass)
 
+    /** 按活动整体保存住宿安排与配套颜色标签，覆盖该活动下既有记录。 */
     @PostMapping("/save")
     fun saveByActivity(@RequestBody request: LodgingSaveRequest): ResponseEntity<ApiResponse> {
         log.info(
@@ -103,6 +110,7 @@ class LodgingController(
         return builder.ok().data(rs).build()
     }
 
+    /** 新增单条住宿安排并返回。 */
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Lodging): ResponseEntity<ApiResponse> {
         val lodging = lodgingService.saveOne(entity)
@@ -128,6 +136,7 @@ class LodgingController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量新增住宿安排并返回。 */
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<Lodging>): ResponseEntity<ApiResponse> {
         val lodgings = lodgingService.saveBatch(request.items)
@@ -155,6 +164,7 @@ class LodgingController(
         return builder.ok().data(rs).build()
     }
 
+    /** 更新单条住宿安排并返回。 */
     @PostMapping("/update-one")
     fun updateOne(@RequestBody entity: Lodging): ResponseEntity<ApiResponse> {
         val lodging = lodgingService.updateOne(entity)
@@ -180,6 +190,7 @@ class LodgingController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量更新住宿安排并返回。 */
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<Lodging>): ResponseEntity<ApiResponse> {
         val lodgings = lodgingService.updateBatch(request.items)
@@ -207,14 +218,17 @@ class LodgingController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 删除单条住宿安排。 */
     @PostMapping("/delete-one")
     fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, lodgingService)
 
+    /** 按 id 列表批量删除住宿安排。 */
     @PostMapping("/delete-batch")
     fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, lodgingService)
 
+    /** 按 id 查询单条住宿安排，未找到返回 notFound。 */
     @PostMapping("/find-by-id")
     fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -241,6 +255,7 @@ class LodgingController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 查询该活动下所有住宿安排。 */
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         log.info("收到住宿列表请求: activityId={}", request.activityId)

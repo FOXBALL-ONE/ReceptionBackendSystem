@@ -39,6 +39,7 @@ class ExcelController(
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
 
+    /** 下载空白导入模板（9 个 sheet 表头）。 */
     @GetMapping("/template")
     fun downloadTemplate(): ResponseEntity<ByteArrayResource> {
         val out = ByteArrayOutputStream()
@@ -46,6 +47,7 @@ class ExcelController(
         return xlsxResponse(out.toByteArray(), "数字接待系统_导入模板.xlsx")
     }
 
+    /** 按 id 或 url 导出某个活动的完整数据为 .xlsx。 */
     @GetMapping("/export")
     fun export(
         @RequestParam(name = "id", required = false) id: Long?,
@@ -62,6 +64,7 @@ class ExcelController(
         return xlsxResponse(out.toByteArray(), "数字接待系统_数据导出.xlsx")
     }
 
+    /** 上传 .xlsx 解析并落库（覆盖当前活动或创建新活动）。 */
     @PostMapping("/import", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun importExcel(
         @RequestParam("file") file: MultipartFile,
@@ -112,6 +115,7 @@ class ExcelController(
         )
     }
 
+    /** 构造 .xlsx 附件下载响应。 */
     private fun xlsxResponse(bytes: ByteArray, filename: String): ResponseEntity<ByteArrayResource> {
         val disposition = ContentDisposition.attachment()
             .filename(filename, StandardCharsets.UTF_8)

@@ -22,11 +22,13 @@ import java.time.LocalDateTime
 )
 @Entity
 data class Image(
+    /** 图片元数据主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Long? = null,
 
+    /** 所属活动，删除活动时由数据库级联删除图片元数据。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)

@@ -15,12 +15,18 @@ import top.foxball.receptionbackendsystem.service.OverviewOfTheCityAndCountyServ
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 
+/**
+ * 市县概况控制器，挂在 /api/overviews 下。
+ *
+ * 提供单条/批量保存与更新、删除、按活动/ id 查询等市县概况的增删改查端点。
+ */
 @RestController
 @RequestMapping("/api/overviews")
 class OverviewOfTheCityAndCountyController(
     private val overviewService: OverviewOfTheCityAndCountyService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    /** 新增单条市县概况并返回。 */
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: OverviewOfTheCityAndCounty): ResponseEntity<ApiResponse> {
         val overview = overviewService.saveOne(entity)
@@ -44,6 +50,7 @@ class OverviewOfTheCityAndCountyController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动批量保存市县概况并返回。 */
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<OverviewOfTheCityAndCounty>): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -70,6 +77,7 @@ class OverviewOfTheCityAndCountyController(
         return builder.ok().data(rs).build()
     }
 
+    /** 更新单条市县概况并返回。 */
     @PostMapping("/update-one")
     fun updateOne(@RequestBody entity: OverviewOfTheCityAndCounty): ResponseEntity<ApiResponse> {
         val overview = overviewService.updateOne(entity)
@@ -93,6 +101,7 @@ class OverviewOfTheCityAndCountyController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量更新市县概况并返回。 */
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<OverviewOfTheCityAndCounty>): ResponseEntity<ApiResponse> {
         val overviews = overviewService.updateBatch(request.items)
@@ -118,14 +127,17 @@ class OverviewOfTheCityAndCountyController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 删除单条市县概况。 */
     @PostMapping("/delete-one")
     fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, overviewService)
 
+    /** 按 id 列表批量删除市县概况。 */
     @PostMapping("/delete-batch")
     fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, overviewService)
 
+    /** 按 id 查询单条市县概况，未找到返回 notFound。 */
     @PostMapping("/find-by-id")
     fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -150,6 +162,7 @@ class OverviewOfTheCityAndCountyController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 查询该活动下所有市县概况。 */
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")

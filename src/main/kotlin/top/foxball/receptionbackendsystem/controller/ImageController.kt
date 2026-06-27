@@ -23,12 +23,18 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.time.LocalDateTime
 
+/**
+ * 图片控制器，挂在 /api/images 下。
+ *
+ * 提供图片列表查询、按 id 查询、上传、下载与软删除端点，所有写操作围绕活动关联的图片资源。
+ */
 @RestController
 @RequestMapping("/api/images")
 class ImageController(
     private val imageService: ImageService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    /** 查询图片列表，传入活动 id 时按活动过滤，否则返回全部未删除图片。 */
     @PostMapping("/list")
     fun list(@RequestBody(required = false) request: ActivityIdRequest?): ResponseEntity<ApiResponse> {
         val images = request?.activityId
@@ -84,6 +90,7 @@ class ImageController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 查询单条图片，未找到返回 notFound。 */
     @PostMapping("/find-by-id")
     fun findById(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -136,6 +143,7 @@ class ImageController(
         return builder.ok().data(rs).build()
     }
 
+    /** 上传图片：支持 multipart 文件与活动 id、用途等元数据，返回存储后的图片信息。 */
     @PostMapping(
         "/upload",
         consumes = [MediaType.MULTIPART_FORM_DATA_VALUE],
@@ -201,6 +209,7 @@ class ImageController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 下载图片原始文件流，以附件形式返回。 */
     @PostMapping("/download")
     fun download(@RequestBody request: LongIdRequest): ResponseEntity<InputStreamResource> {
         val id = request.id ?: throw ParamErrorException("id is required")
@@ -222,6 +231,7 @@ class ImageController(
             .body(InputStreamResource(Files.newInputStream(file)))
     }
 
+    /** 按 id 软删除图片，记录不存在返回 notFound。 */
     @PostMapping("/delete")
     fun delete(@RequestBody request: LongIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -232,6 +242,7 @@ class ImageController(
     }
 }
 
+/** 图片上传附带的元数据：活动 id、用途、上传人。 */
 data class ImageUploadMetadata(
     val activityId: Long? = null,
     val usageType: String? = null,

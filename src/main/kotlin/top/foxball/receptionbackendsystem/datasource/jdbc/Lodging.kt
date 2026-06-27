@@ -24,11 +24,13 @@ import org.hibernate.type.SqlTypes
 @Table(name = "lodging")
 @Entity
 data class Lodging(
+    /** 住宿记录主键。 */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     var id: Int? = null,
 
+    /** 所属活动，删除活动时由数据库级联删除住宿记录。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)
@@ -44,7 +46,7 @@ data class Lodging(
     @Column(name = "person", columnDefinition = "jsonb")
     var person: Person? = null,
 
-    /** 全局颜色标签。 */
+    /** 所属颜色标签，用于住宿分组的颜色标记。 */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "color_tag_id")
     var colorTag: ColorTag? = null,

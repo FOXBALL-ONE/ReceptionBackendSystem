@@ -28,10 +28,18 @@ import java.io.OutputStream
 import java.time.format.DateTimeFormatter
 import kotlin.io.use
 
+/**
+ * 整库 Excel 导出服务。
+ *
+ * 把一个活动下的全部业务数据（人员/车辆/用餐/住宿/工作人员/日程/考察点/参会须知/市县概况）
+ * 按约定顺序写入 9 个 sheet，结构由各 sheet 的 head 类（XxxItem / XxxExcelRow）决定，
+ * 与 [ExcelDatabaseImportService] 写出的模板一一对应。
+ */
 @Service
 class ExcelDatabaseExportService(
     private val activitiesRepository: ActivitiesRepository,
 ) {
+    /** 按活动主键导出整库为 Excel，写入 [outputStream]。 */
     @Transactional(readOnly = true)
     fun exportActivity(activityId: Long, outputStream: OutputStream) {
         val activity = activitiesRepository.findById(activityId)
@@ -40,6 +48,7 @@ class ExcelDatabaseExportService(
         writeWorkbook(activity, outputStream)
     }
 
+    /** 按活动 url 导出整库为 Excel，写入 [outputStream]。 */
     @Transactional(readOnly = true)
     fun exportActivity(url: String, outputStream: OutputStream) {
         val activity = activitiesRepository.findByUrl(url)
@@ -48,6 +57,7 @@ class ExcelDatabaseExportService(
         writeWorkbook(activity, outputStream)
     }
 
+    /** 把活动各子集合按 head 类转换为行并依次写入 9 个 sheet。 */
     private fun writeWorkbook(activity: Activities, outputStream: OutputStream) {
         EasyExcel.write(outputStream).build().use { writer ->
             writer.write(activity.toPersonnelRows(), sheet(0, "人员名单", PersonnelItem::class.java))

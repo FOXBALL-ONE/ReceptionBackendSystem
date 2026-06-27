@@ -9,20 +9,34 @@ import top.foxball.receptionbackendsystem.datasource.excel.StaffItem
 import java.io.FileInputStream
 import java.io.InputStream
 
+/**
+ * 乘车安排的 Excel 导入服务。
+ *
+ * 读取工作簿第 2 个 sheet（index=1，"乘车安排"），按 [CarExcelRow] 列结构解析为扁平行，
+ * 再按车号聚合成 [CarItem]（含工作人员与乘车人员），
+ * 对应活动下属的 [top.foxball.receptionbackendsystem.datasource.jdbc.Car] 实体。
+ */
 @Service
 class CarExcelService {
+    /** 从文件路径读取乘车安排 sheet。 */
     fun importCar(filePath: String): List<CarItem> {
         return FileInputStream(filePath).use { inputStream ->
             importCar(inputStream)
         }
     }
 
+    /** 从上传文件读取乘车安排 sheet。 */
     fun importCar(file: MultipartFile): List<CarItem> {
         return file.inputStream.use { inputStream ->
             importCar(inputStream)
         }
     }
 
+    /**
+     * 读取"乘车安排" sheet 并按车号分组合并。
+     * 车号非空视为新车起始行；后续无车号行的"工作人员"与"乘车人员"挂到当前车，
+     * 同名同号的"工作人员"会去重。
+     */
     fun importCar(inputStream: InputStream): List<CarItem> {
         val rows = EasyExcel.read(inputStream)
             .head(CarExcelRow::class.java)

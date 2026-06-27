@@ -21,6 +21,7 @@ data class InspectionTeamItem(
     @Column(name = "id")
     var id: Long? = null,
 
+    /** 所属活动，删除活动时由数据库级联删除考察组记录。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "activity_id", nullable = false)
@@ -51,6 +52,7 @@ data class InspectionTeamItinerary(
     @Column(name = "id")
     var id: Long? = null,
 
+    /** 所属考察组身份，删除考察组时由数据库级联删除行程。 */
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inspection_team_item_id", nullable = false)

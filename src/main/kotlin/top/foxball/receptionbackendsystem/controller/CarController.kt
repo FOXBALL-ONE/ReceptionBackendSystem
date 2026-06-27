@@ -18,12 +18,18 @@ import top.foxball.receptionbackendsystem.service.CarService
 import top.foxball.receptionbackendsystem.shared.Response as ApiResponse
 import top.foxball.receptionbackendsystem.shared.ResponseBuilder
 
+/**
+ * 车辆控制器，挂在 /api/cars 下。
+ *
+ * 提供按活动整体保存、单条/批量保存与更新、删除、按活动/车号查询等车辆增删改查端点。
+ */
 @RestController
 @RequestMapping("/api/cars")
 class CarController(
     private val carService: CarService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+    /** 按活动整体保存车辆，覆盖该活动下既有记录。 */
     @PostMapping("/save")
     fun saveByActivity(@RequestBody request: CarSaveRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -56,6 +62,7 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 新增单条车辆并返回。 */
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: Car): ResponseEntity<ApiResponse> {
         val car = carService.saveOne(entity)
@@ -85,6 +92,7 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量新增车辆并返回。 */
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<Car>): ResponseEntity<ApiResponse> {
         val cars = carService.saveBatch(request.items)
@@ -116,6 +124,7 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 更新单条车辆并返回。 */
     @PostMapping("/update-one")
     fun updateOne(@RequestBody entity: Car): ResponseEntity<ApiResponse> {
         val car = carService.updateOne(entity)
@@ -145,6 +154,7 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 批量更新车辆并返回。 */
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<Car>): ResponseEntity<ApiResponse> {
         val cars = carService.updateBatch(request.items)
@@ -176,14 +186,17 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按 id 删除单条车辆。 */
     @PostMapping("/delete-one")
     fun deleteOne(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> =
         deleteById(request.id, carService)
 
+    /** 按 id 列表批量删除车辆。 */
     @PostMapping("/delete-batch")
     fun deleteBatch(@RequestBody request: IntIdsRequest): ResponseEntity<ApiResponse> =
         deleteByIds(request.ids, carService)
 
+    /** 按 id 查询单条车辆，未找到返回 notFound。 */
     @PostMapping("/find-by-id")
     fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
@@ -214,6 +227,7 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 查询该活动下所有车辆。 */
     @PostMapping("/find-by-activity-id")
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
@@ -246,6 +260,7 @@ class CarController(
         return builder.ok().data(rs).build()
     }
 
+    /** 按活动 id 与车号精确查询单条车辆。 */
     @PostMapping("/find-by-car-number")
     fun findByCarNumber(@RequestBody request: ActivityCarNumberRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")

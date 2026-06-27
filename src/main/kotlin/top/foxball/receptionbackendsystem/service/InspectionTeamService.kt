@@ -3,6 +3,12 @@ package top.foxball.receptionbackendsystem.service
 import top.foxball.receptionbackendsystem.controller.request.InspectionTeamItemDto
 import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamItem
 
+/**
+ * 考察组业务服务契约。
+ *
+ * 为 [InspectionTeamItem] 提供按活动维度查询、按名称模糊匹配
+ * 以及按活动整体覆盖保存考察组身份及其各天行程。
+ */
 interface InspectionTeamService : ActivityEntityService<InspectionTeamItem, Long> {
     /**
      * 整体保存活动下的考察组身份及其各天行程。
@@ -12,5 +18,6 @@ interface InspectionTeamService : ActivityEntityService<InspectionTeamItem, Long
      */
     fun saveByActivity(activityId: Long, groups: List<InspectionTeamItemDto>): List<InspectionTeamItem>
 
+    /** 按考察组名称模糊匹配考察组身份。 */
     fun findByNameContaining(name: String): List<InspectionTeamItem>
 }

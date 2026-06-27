@@ -11,11 +11,23 @@ import top.foxball.receptionbackendsystem.datasource.jdbc.InspectionTeamReposito
 import top.foxball.receptionbackendsystem.handlder.ResourceNotFoundException
 import top.foxball.receptionbackendsystem.service.InspectionTeamService
 
+/**
+ * 考察组服务实现，操作 [InspectionTeamItem] 实体。
+ *
+ * 所有写方法均通过基类 [AbstractReceptionService] 包装为单事务。
+ * [saveByActivity] 以「按活动整体覆盖」语义重建该活动的考察组集合，并级联重建每组下的天级行程（含路线节点、活动安排），
+ * 借助活动实体的 orphanRemoval 级联清理被移除的考察组与行程。
+ */
 @Service
 class InspectionTeamServiceImpl(
     private val inspectionTeamRepository: InspectionTeamRepository,
     private val activitiesRepository: ActivitiesRepository,
 ) : AbstractReceptionService<InspectionTeamItem, Long>(inspectionTeamRepository), InspectionTeamService {
+    /**
+     * 按活动查询其下全部考察组。
+     *
+     * 同时预初始化每组的天级行程及其路线节点、活动安排集合，避免序列化阶段触发懒加载异常。
+     */
     @Transactional(readOnly = true)
     override fun findByActivityId(activityId: Long): List<InspectionTeamItem> {
         val teams = inspectionTeamRepository.findByActivityId(activityId)
@@ -30,10 +42,21 @@ class InspectionTeamServiceImpl(
         return teams
     }
 
+    /** 按名称关键字模糊匹配考察组。 */
     @Transactional(readOnly = true)
     override fun findByNameContaining(name: String): List<InspectionTeamItem> =
         inspectionTeamRepository.findByNameContaining(name)
 
+    /**
+     * 整体覆盖保存某活动的考察组及其天级行程。
+     *
+     * 步骤：
+     * 1) 加载活动，按 id 建立既有考察组索引与既有日程（天）索引（行程须挂在本活动已存在的天之下）；
+     * 2) 逐组归一化：命中 id 复用既有考察组做更新，否则新建，并回填活动引用与组名；
+     * 3) 在组内逐条重建行程：按 id 复用既有行程，否则新建；路线节点与活动安排整体清空后按请求深拷贝重建；
+     *    缺失 scheduleId 或对应天不存在的行程被跳过；未出现在请求中的既有行程由 orphanRemoval 清理；
+     * 4) 清空 [Activities.inspectionTeamItemList] 后整体替换为归一化结果并保存活动。
+     */
     @Transactional
     override fun saveByActivity(activityId: Long, groups: List<InspectionTeamItemDto>): List<InspectionTeamItem> {
         val activity = activitiesRepository.findEntityById(activityId)

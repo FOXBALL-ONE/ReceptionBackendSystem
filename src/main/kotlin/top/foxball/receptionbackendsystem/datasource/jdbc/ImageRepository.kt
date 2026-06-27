@@ -4,8 +4,14 @@ package top.foxball.receptionbackendsystem.datasource.jdbc
  * 图片文件元数据仓库。
  */
 interface ImageRepository : ReceptionRepository<Image, Long> {
+    /**
+     * 查询全部未删除的图片元数据，按创建时间倒序。
+     */
     fun findByIsDeletedFalseOrderByCreatedAtDesc(): List<Image>
 
+    /**
+     * 根据 ID 查询未删除的图片元数据。
+     */
     fun findByIdAndIsDeletedFalse(id: Long): Image?
 
     /**
