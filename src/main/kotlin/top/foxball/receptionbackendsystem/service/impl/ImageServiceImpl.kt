@@ -31,7 +31,21 @@ class ImageServiceImpl(
     private val activitiesRepository: ActivitiesRepository,
     private val imageStorageProperties: ImageStorageProperties,
 ) : AbstractReceptionService<Image, Long>(imageRepository), ImageService {
-    private val extensionPattern = Regex("[A-Za-z0-9]{1,16}")
+    /**
+     * 允许上传的图片扩展名白名单。
+     * SVG 因可内嵌脚本，经 /images 静态资源路径内联返回会触发存储型 XSS，故不在此列（已禁用）。
+     */
+    private val allowedExtensions = setOf("jpg", "jpeg", "png", "gif", "webp", "bmp")
+
+    /** Content-Type → 扩展名映射（仅含安全栅格图类型；不含 image/svg+xml）。 */
+    private val contentTypeToExtension = mapOf(
+        "image/jpeg" to "jpg",
+        "image/jpg" to "jpg",
+        "image/png" to "png",
+        "image/gif" to "gif",
+        "image/webp" to "webp",
+        "image/bmp" to "bmp",
+    )
 
     /** 查询全部未软删的图片，按创建时间倒序。 */
     @Transactional(readOnly = true)
@@ -95,7 +109,8 @@ class ImageServiceImpl(
             }
 
             val extension = resolveExtension(originalFilename, contentType)
-            val storedFilename = if (extension == null) sha256 else "$sha256.$extension"
+                ?: throw ParamErrorException("unsupported image type (svg is disabled); allowed: ${allowedExtensions.joinToString()}")
+            val storedFilename = "$sha256.$extension"
             val targetFile = activityDirectory.resolve(storedFilename).normalize()
             ensureInsideStorageRoot(targetFile)
             moveReplacing(tempFile, targetFile)
@@ -181,19 +196,11 @@ class ImageServiceImpl(
     private fun resolveExtension(filename: String, contentType: String): String? {
         val fromName = filename.substringAfterLast('.', missingDelimiterValue = "")
             .lowercase()
-            .takeIf { it.matches(extensionPattern) }
+            .takeIf { it.isNotBlank() && it in allowedExtensions }
         if (fromName != null) {
-            return fromName
+            return if (fromName == "jpeg") "jpg" else fromName
         }
-        return when (contentType.lowercase()) {
-            "image/jpeg", "image/jpg" -> "jpg"
-            "image/png" -> "png"
-            "image/gif" -> "gif"
-            "image/webp" -> "webp"
-            "image/svg+xml" -> "svg"
-            "image/bmp" -> "bmp"
-            else -> null
-        }
+        return contentTypeToExtension[contentType.lowercase()]
     }
 
     private fun moveReplacing(source: Path, target: Path) {

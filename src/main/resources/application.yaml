@@ -77,6 +77,14 @@ system:
     # 审计操作者标识（来源 SYSTEM_INIT_ACTOR）。
     audit-actor: ${SYSTEM_INIT_ACTOR:env-operator}
 
+rate-limit:
+  # 限流总开关
+  enabled: ${RATE_LIMIT_ENABLED:true}
+  # 令牌桶容量（瞬时突发上限）
+  capacity: ${RATE_LIMIT_CAPACITY:30}
+  # 令牌补充速率（每分钟，即持续允许的请求/分钟）
+  refill-per-minute: ${RATE_LIMIT_REFILL_PER_MINUTE:60}
+
 logging:
   level:
     root: info

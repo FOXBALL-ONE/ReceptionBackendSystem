@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import top.foxball.receptionbackendsystem.interceptor.LoginInterceptor
+import top.foxball.receptionbackendsystem.interceptor.RateLimitInterceptor
 
 /**
  * 登录拦截器注册。
@@ -17,8 +18,18 @@ import top.foxball.receptionbackendsystem.interceptor.LoginInterceptor
 @Configuration
 class LoginWebConfig(
     private val loginInterceptor: LoginInterceptor,
+    private val rateLimitInterceptor: RateLimitInterceptor,
 ) : WebMvcConfigurer {
     override fun addInterceptors(registry: InterceptorRegistry) {
+        // 限流先行（先挡洪水，再做鉴权/DB）：覆盖公网站点端点与登录入口
+        registry.addInterceptor(rateLimitInterceptor)
+            .addPathPatterns(
+                "/api/site/**",
+                "/api/meta", "/api/schedule", "/api/people", "/api/vehicles",
+                "/api/meals", "/api/hotel", "/api/sites", "/api/service", "/api/overview",
+                "/api/auth/login", "/api/auth/login/totp", "/api/auth/login/backup",
+            )
+
         registry.addInterceptor(loginInterceptor)
             .addPathPatterns("/**")
             .excludePathPatterns(
