@@ -24,6 +24,13 @@ class SystemBootstrapProperties {
     /** 审计默认操作者标识（来源 SYSTEM_INIT_ACTOR）。 */
     var auditActor: String = "env-operator"
 
+    /**
+     * 首次 / 强制初始化时是否走"清空重建（drop+create）"路径并要求控制台交互确认。
+     * 来源 SYSTEM_BOOTSTRAP_REBUILD，默认开。关闭后退回安全增量 migrate（永不 drop），
+     * 用于测试 / CI / 容器等无交互或不可破坏的场景。
+     */
+    var interactiveRebuild: Boolean = true
+
     /** 将 [forceInit] 文本解析为强类型模式。 */
     val forceMode: ForceInitMode
         get() = when (forceInit.trim().lowercase()) {

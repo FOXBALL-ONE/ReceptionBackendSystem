@@ -29,7 +29,11 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update  # 保留并增量更新表结构，使用户账号/2FA 绑定等数据持久化
+      # schema 由 SystemBootstrapService 编程式管理（ddl-auto=none）：
+      # - 正常已初始化启动 / 安全模式 → migrate（增量，等价 update）；
+      # - 首次 / 强制初始化 → 经控制台交互确认后 drop+create（见 system.bootstrap.interactive-rebuild）。
+      # 置 none 是为了让重建前的交互确认能介入，避免确认前就改库。
+      ddl-auto: none
     show-sql: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
@@ -37,8 +41,8 @@ spring:
         format_sql: true
         jdbc:
           batch_size: 20
-        order_inserts: true
-        order_updates: true
+          order_inserts: true
+          order_updates: true
 
 
 image:
@@ -76,6 +80,10 @@ system:
     force-init: ${SYSTEM_FORCE_INIT:}
     # 审计操作者标识（来源 SYSTEM_INIT_ACTOR）。
     audit-actor: ${SYSTEM_INIT_ACTOR:env-operator}
+    # 首次 / 强制初始化时是否走"清空重建（drop+create）"路径并要求控制台输入 true 确认。
+    # 来源 SYSTEM_BOOTSTRAP_REBUILD，默认开。关闭后退回安全增量 migrate（永不 drop），
+    # 用于测试 / CI / 容器等无交互或不可破坏的场景。
+    interactive-rebuild: ${SYSTEM_BOOTSTRAP_REBUILD:true}
 
 rate-limit:
   # 限流总开关
