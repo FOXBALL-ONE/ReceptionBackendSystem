@@ -2,26 +2,33 @@
   <n-space vertical :size="16" class="lodging-editor">
     <n-card title="分组设置" :bordered="false">
       <template #header-extra>
-        <n-button type="primary" @click="addPersonType">
-          <template #icon>
-            <GoPlus />
-          </template>
-          增加类型
-        </n-button>
+        <n-flex :size="8" align="center">
+          <n-button secondary :loading="colorTagsLoading" @click="fetchColorTags">刷新颜色</n-button>
+          <n-button type="primary" @click="addColorTag">
+            <template #icon>
+              <GoPlus />
+            </template>
+            增加类型
+          </n-button>
+        </n-flex>
       </template>
 
-      <n-empty v-if="personTypes.length === 0" description="暂无类型">
+      <n-alert v-if="colorTagsError" type="warning" class="groups-alert" :show-icon="false">
+        {{ colorTagsError }}
+      </n-alert>
+
+      <n-empty v-if="colorTags.length === 0" description="暂无类型颜色">
         <template #extra>
-          <n-button type="primary" @click="addPersonType">增加类型</n-button>
+          <n-button type="primary" @click="addColorTag">增加类型</n-button>
         </template>
       </n-empty>
 
       <n-space v-else vertical :size="10">
-        <div v-for="type in personTypes" :key="type.id" class="type-row">
-          <span class="color-dot" :style="{ backgroundColor: type.color }" />
-          <n-input v-model:value="type.name" placeholder="请输入类型名称" clearable />
-          <n-color-picker v-model:value="type.color" :show-alpha="false" />
-          <n-button circle quaternary type="error" aria-label="删除类型" @click="removePersonType(type.id)">
+        <div v-for="tag in colorTags" :key="tag.value" class="type-row">
+          <span class="color-dot" :style="{ backgroundColor: tag.color }" />
+          <n-input v-model:value="tag.name" placeholder="请输入类型名称" clearable />
+          <n-color-picker v-model:value="tag.color" :show-alpha="false" />
+          <n-button circle quaternary type="error" aria-label="删除类型" @click="removeColorTag(tag.value)">
             <template #icon>
               <GoX />
             </template>
@@ -77,11 +84,11 @@
             <div class="lodging-title">
               <span class="lodging-order">住宿 {{ index + 1 }}</span>
               <span
-                v-if="getPersonType(lodging.typeId)"
+                v-if="getColorTag(lodging.colorTagId)"
                 class="type-badge"
-                :style="{ '--type-color': getPersonType(lodging.typeId)?.color }"
+                :style="{ '--type-color': getColorTag(lodging.colorTagId)?.color }"
               >
-                {{ getPersonType(lodging.typeId)?.name }}
+                {{ getColorTag(lodging.colorTagId)?.name }}
               </span>
               <span class="lodging-summary">{{ getLodgingSummary(lodging) }}</span>
             </div>
@@ -126,8 +133,10 @@
               </n-form-item-gi>
               <n-form-item-gi label="类型">
                 <n-select
-                  v-model:value="lodging.typeId"
-                  :options="personTypeOptions"
+                  v-model:value="lodging.colorTagId"
+                  :options="colorTagOptions"
+                  :loading="colorTagsLoading"
+                  :disabled="colorTagOptions.length === 0"
                   placeholder="类型选择"
                   clearable
                 />
@@ -158,8 +167,10 @@ const eventId = inject<Ref<string>>('eventId')
 const eventApi = useEventApi()
 const message = useMessage()
 
-interface PersonType {
-  id: string;
+// 与人员页面（person.vue）共享同一套 PERSON 颜色标签，分组设置在两端双向同步。
+interface ColorTagOption {
+  label: string;
+  value: string;
   backendId: number | null;
   name: string;
   color: string;
@@ -178,8 +189,16 @@ interface LodgingRecord {
   personId: string | null;
   roomNumber: string;
   name: string;
-  typeId: string | null;
+  colorTagId: string | null;
 }
+
+type RawColorTag = {
+  id?: string | number;
+  value?: string | number;
+  name?: string;
+  label?: string;
+  color?: string;
+};
 
 type RawPerson = {
   id?: string | number;
@@ -210,20 +229,23 @@ type PeopleResponse =
       data?: RawPerson[];
     };
 
+const DEFAULT_UNGROUPED_COLOR = "#d0d5dd";
 const typeColors = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#0891b2"];
 
 const idCounters = {
   lodging: 1,
-  type: 1,
+  colorTag: 1,
 };
 
-const personTypes = ref<PersonType[]>(createDefaultPersonTypes());
+const colorTags = ref<ColorTagOption[]>([]);
+const colorTagsLoading = ref(false);
+const colorTagsError = ref("");
+const deletedColorTagIds = ref<number[]>([]);
 const people = ref<PersonOption[]>([]);
 const peopleLoading = ref(false);
 const peopleError = ref("");
 const pendingPersonId = ref<string | null>(null);
 const lodgings = ref<LodgingRecord[]>([createLodging()]);
-const deletedPersonTypeIds = ref<number[]>([]);
 const loading = ref(false);
 const saving = ref(false);
 
@@ -238,12 +260,14 @@ const assignedPersonIds = computed(() => {
   return ids;
 });
 
-const personTypeOptions = computed<SelectOption[]>(() =>
-  personTypes.value
-    .filter((type) => type.name.trim())
-    .map((type) => ({
-      label: type.name,
-      value: type.id,
+const colorTagMap = computed(() => new Map(colorTags.value.map((tag) => [tag.value, tag])));
+
+const colorTagOptions = computed<SelectOption[]>(() =>
+  colorTags.value
+    .filter((tag) => tag.name.trim())
+    .map((tag) => ({
+      label: tag.name,
+      value: tag.value,
     })),
 );
 
@@ -265,20 +289,36 @@ function nextId(prefix: keyof typeof idCounters) {
   return `${prefix}-${nextValue}`;
 }
 
-function createPersonType(name = "", color?: string, backendId: number | null = null): PersonType {
+function createColorTag(name = "", color?: string, backendId: number | null = null, value?: string): ColorTagOption {
   return {
-    id: nextId("type"),
+    label: name,
+    value: value ?? (backendId !== null ? String(backendId) : nextId("colorTag")),
     backendId,
     name,
-    color: color ?? typeColors[(idCounters.type - 2) % typeColors.length],
+    color: color ?? typeColors[(idCounters.colorTag - 2) % typeColors.length],
   };
 }
 
-function createDefaultPersonTypes() {
-  return [
-    createPersonType("工作人员", "#2563eb"),
-    createPersonType("嘉宾", "#16a34a"),
-  ];
+function addColorTag() {
+  colorTags.value.push(createColorTag(`类型 ${colorTags.value.length + 1}`));
+}
+
+function removeColorTag(colorTagId: string) {
+  const tag = getColorTag(colorTagId);
+  if (tag?.backendId !== null && tag?.backendId !== undefined) {
+    deletedColorTagIds.value.push(tag.backendId);
+  }
+
+  colorTags.value = colorTags.value.filter((item) => item.value !== colorTagId);
+  lodgings.value.forEach((lodging) => {
+    if (lodging.colorTagId === colorTagId) {
+      lodging.colorTagId = null;
+    }
+  });
+}
+
+function getColorTag(colorTagId: string | null) {
+  return colorTagId ? colorTagMap.value.get(colorTagId) ?? null : null;
 }
 
 function createLodging(values: Partial<Omit<LodgingRecord, "id">> = {}): LodgingRecord {
@@ -288,26 +328,8 @@ function createLodging(values: Partial<Omit<LodgingRecord, "id">> = {}): Lodging
     personId: values.personId ?? null,
     roomNumber: values.roomNumber ?? "",
     name: values.name ?? "",
-    typeId: values.typeId ?? personTypes.value[0]?.id ?? null,
+    colorTagId: values.colorTagId ?? colorTags.value[0]?.value ?? null,
   };
-}
-
-function addPersonType() {
-  personTypes.value.push(createPersonType(`类型 ${personTypes.value.length + 1}`));
-}
-
-function removePersonType(typeId: string) {
-  const type = getPersonType(typeId);
-  if (type?.backendId !== null && type?.backendId !== undefined) {
-    deletedPersonTypeIds.value.push(type.backendId);
-  }
-
-  personTypes.value = personTypes.value.filter((type) => type.id !== typeId);
-  lodgings.value.forEach((lodging) => {
-    if (lodging.typeId === typeId) {
-      lodging.typeId = null;
-    }
-  });
 }
 
 function addLodging() {
@@ -345,10 +367,6 @@ function moveItem<T>(items: T[], index: number, offset: -1 | 1) {
 
 function moveLodging(index: number, offset: -1 | 1) {
   moveItem(lodgings.value, index, offset);
-}
-
-function getPersonType(typeId: string | null) {
-  return personTypes.value.find((type) => type.id === typeId) ?? null;
 }
 
 function getLodgingSummary(lodging: LodgingRecord) {
@@ -413,49 +431,82 @@ function normalizeBackendId(value: unknown) {
   return Number.isFinite(id) ? id : null;
 }
 
-function ensurePersonTypeFromColorTag(colorTag: any) {
-  if (!colorTag) return null;
+function createColorTagOption(rawTag: RawColorTag): ColorTagOption | null {
+  const backendId = normalizeBackendId(rawTag.id ?? rawTag.value);
+  const name = String(rawTag.name ?? rawTag.label ?? "").trim();
+  const color = String(rawTag.color ?? "").trim() || DEFAULT_UNGROUPED_COLOR;
 
-  const backendId = normalizeBackendId(colorTag.id);
-  const name = String(colorTag.name ?? "").trim();
-  const color = String(colorTag.color ?? "").trim() || undefined;
-  const matchedType = personTypes.value.find((type) => {
-    if (backendId !== null && type.backendId === backendId) return true;
-
-    return name && type.name === name;
-  });
-
-  if (matchedType) {
-    if (backendId !== null) matchedType.backendId = backendId;
-    if (name) matchedType.name = name;
-    if (color) matchedType.color = color;
-
-    return matchedType.id;
+  if (!name && backendId === null) {
+    return null;
   }
 
-  if (!name) return null;
-
-  const type = createPersonType(name, color, backendId);
-  personTypes.value.push(type);
-
-  return type.id;
+  return createColorTag(
+    name || `颜色 ${backendId}`,
+    color,
+    backendId,
+    backendId !== null ? String(backendId) : name,
+  );
 }
 
-function normalizeColorTags(response: any): PersonType[] {
-  deletedPersonTypeIds.value = [];
+function normalizeColorTags(response: any): ColorTagOption[] {
+  const seen = new Set<string>();
 
   return pickList(response, "records", "rows", "list", "items", "colorTags", "data")
-    .map((colorTag) => {
-      const name = String(colorTag?.name ?? "").trim();
-      if (!name) return null;
+    .map((colorTag) => createColorTagOption(colorTag ?? {}))
+    .filter((tag): tag is ColorTagOption => {
+      if (!tag || seen.has(tag.value)) {
+        return false;
+      }
 
-      return createPersonType(
-        name,
-        String(colorTag?.color ?? "").trim() || undefined,
-        normalizeBackendId(colorTag?.id),
-      );
-    })
-    .filter((type): type is PersonType => type !== null);
+      seen.add(tag.value);
+      return true;
+    });
+}
+
+function ensureColorTagFromRaw(rawTag: RawColorTag | null | undefined) {
+  if (!rawTag) return null;
+
+  const tag = createColorTagOption(rawTag);
+  if (!tag) return null;
+
+  const matched = colorTags.value.find((item) => {
+    if (tag.backendId !== null && item.backendId === tag.backendId) return true;
+
+    return tag.name && item.name === tag.name;
+  });
+
+  if (matched) {
+    if (tag.backendId !== null) matched.backendId = tag.backendId;
+    if (tag.name) {
+      matched.name = tag.name;
+      matched.label = tag.label;
+    }
+    if (tag.color) matched.color = tag.color;
+
+    return matched.value;
+  }
+
+  colorTags.value.push(tag);
+  return tag.value;
+}
+
+function buildColorTagPayload(type: string) {
+  return colorTags.value
+    .filter((tag) => tag.name.trim())
+    .map((tag) => ({
+      ...(tag.backendId !== null ? { id: tag.backendId } : {}),
+      name: tag.name.trim(),
+      color: tag.color,
+      type,
+    }));
+}
+
+async function deleteRemovedColorTags() {
+  const ids = Array.from(new Set(deletedColorTagIds.value));
+  if (ids.length === 0) return;
+
+  await eventApi.deleteColorTags(ids);
+  deletedColorTagIds.value = [];
 }
 
 function normalizeLodgings(response: any): LodgingRecord[] {
@@ -463,14 +514,14 @@ function normalizeLodgings(response: any): LodgingRecord[] {
     .map((lodging) => {
       const person = lodging?.person ?? {};
       const personId = person.id ?? lodging?.personId;
-      const typeId = ensurePersonTypeFromColorTag(lodging?.colorTag);
+      const colorTagId = ensureColorTagFromRaw(lodging?.colorTag);
 
       return createLodging({
         backendId: normalizeBackendId(lodging?.id),
         personId: personId !== null && personId !== undefined ? String(personId) : null,
         roomNumber: String(lodging?.roomNumber ?? "").trim(),
         name: String(person.name ?? lodging?.name ?? "").trim(),
-        typeId,
+        colorTagId,
       });
     });
 }
@@ -488,6 +539,30 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+async function fetchColorTags() {
+  if (!eventId?.value) {
+    colorTagsError.value = "未选择活动";
+    return;
+  }
+
+  colorTagsLoading.value = true;
+  colorTagsError.value = "";
+
+  try {
+    // 与人员页面一致：只查询 PERSON 类型颜色标签，两端共享同一套分组。
+    const response = eventId?.value
+      ? await eventApi.getColorTagsByActivity(eventId.value, 'PERSON')
+      : [];
+    colorTags.value = normalizeColorTags(response);
+    deletedColorTagIds.value = [];
+  } catch (error) {
+    colorTagsError.value = error instanceof Error ? error.message : "颜色分组加载失败";
+    colorTags.value = [];
+  } finally {
+    colorTagsLoading.value = false;
+  }
 }
 
 async function fetchPeople() {
@@ -511,29 +586,6 @@ async function fetchPeople() {
   }
 }
 
-const loadLodgingData = async () => {
-  if (!eventId?.value) return
-
-  try {
-    loading.value = true
-    const [colorTagsResponse, lodgingsResponse] = await Promise.all([
-      eventApi.getColorTagsByActivity(eventId.value, 'LODGING'),
-      eventApi.getLodgingsByActivity(eventId.value),
-    ])
-    const colorTags = normalizeColorTags(colorTagsResponse)
-
-    personTypes.value = colorTags.length > 0 ? colorTags : createDefaultPersonTypes()
-
-    const loadedLodgings = normalizeLodgings(lodgingsResponse)
-    lodgings.value = loadedLodgings.length > 0 ? loadedLodgings : [createLodging()]
-  } catch (error: any) {
-    message.error(error.message || '加载住宿数据失败')
-    lodgings.value = [createLodging()]
-  } finally {
-    loading.value = false
-  }
-}
-
 function clearUnavailablePeople() {
   const availableIds = new Set(people.value.map((person) => person.id));
   lodgings.value.forEach((lodging) => {
@@ -547,10 +599,10 @@ function clearUnavailablePeople() {
   }
 }
 
-function buildSavePayload() {
-  const lodgingPayload = lodgings.value
+function buildLodgingPayload() {
+  return lodgings.value
     .map((lodging) => {
-      const type = getPersonType(lodging.typeId);
+      const colorTag = getColorTag(lodging.colorTagId);
       const selectedPerson = lodging.personId ? personMap.value.get(lodging.personId) : null;
       const roomNumber = lodging.roomNumber.trim();
       const personName = selectedPerson?.name ?? lodging.name.trim();
@@ -572,39 +624,38 @@ function buildSavePayload() {
         ...(lodging.backendId ? { id: lodging.backendId } : {}),
         roomNumber,
         ...(person ? { person } : {}),
-        ...(type
+        // 分组与人员页面共享 PERSON 类型；保存时先经 saveColorTags 落库，
+        // 这里仅按 id/名称/颜色引用，后端 resolveIn 回退到既有（人员）分组解析。
+        ...(colorTag
           ? {
               colorTag: {
-                ...(type.backendId ? { id: type.backendId } : {}),
-                name: type.name.trim(),
-                color: type.color,
-                type: "LODGING",
+                ...(colorTag.backendId !== null ? { id: colorTag.backendId } : {}),
+                name: colorTag.name.trim(),
+                color: colorTag.color,
+                type: "PERSON",
               },
             }
           : {}),
       };
     })
     .filter((lodging): lodging is NonNullable<typeof lodging> => lodging !== null);
-
-  return {
-    colorTags: personTypes.value
-      .filter((type) => type.name.trim())
-      .map((type) => ({
-        ...(type.backendId ? { id: type.backendId } : {}),
-        name: type.name.trim(),
-        color: type.color,
-        type: "LODGING",
-      })),
-    lodgings: lodgingPayload,
-  };
 }
 
-async function deleteRemovedPersonTypes() {
-  const ids = Array.from(new Set(deletedPersonTypeIds.value));
-  if (ids.length === 0) return;
+const loadLodgingData = async () => {
+  if (!eventId?.value) return
 
-  await eventApi.deleteColorTags(ids);
-  deletedPersonTypeIds.value = [];
+  try {
+    loading.value = true
+    await fetchColorTags()
+    const lodgingsResponse = await eventApi.getLodgingsByActivity(eventId.value)
+    const loadedLodgings = normalizeLodgings(lodgingsResponse)
+    lodgings.value = loadedLodgings.length > 0 ? loadedLodgings : [createLodging()]
+  } catch (error: any) {
+    message.error(error.message || '加载住宿数据失败')
+    lodgings.value = [createLodging()]
+  } finally {
+    loading.value = false
+  }
 }
 
 async function saveLodgings() {
@@ -616,9 +667,16 @@ async function saveLodgings() {
   try {
     saving.value = true;
 
-    const lodgingData = buildSavePayload();
-    await eventApi.saveLodgings(eventId.value, lodgingData.lodgings, lodgingData.colorTags);
-    await deleteRemovedPersonTypes();
+    // 先同步分组（与人员页面共享同一套 PERSON 颜色标签），再保存住宿引用。
+    const colorTagPayload = buildColorTagPayload("PERSON");
+    if (colorTagPayload.length > 0) {
+      await eventApi.saveColorTags(eventId.value, colorTagPayload);
+    }
+    await deleteRemovedColorTags();
+
+    // colorTags 传空列表：分组已由上面的 saveColorTags 维护，避免后端重建 LODGING 分组。
+    const lodgingPayload = buildLodgingPayload();
+    await eventApi.saveLodgings(eventId.value, lodgingPayload, []);
 
     await loadLodgingData();
     message.success("住宿安排已保存");
@@ -669,10 +727,12 @@ watch(() => eventId?.value, (newId) => {
 .color-dot {
   width: 12px;
   height: 12px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  flex: 0 0 auto;
 }
 
+.groups-alert,
 .status-alert {
   margin-bottom: 12px;
 }

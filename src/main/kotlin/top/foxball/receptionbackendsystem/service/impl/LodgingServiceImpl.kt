@@ -20,6 +20,9 @@ import java.util.IdentityHashMap
  * 同时保留活动下其它类型（如人员）的颜色分组不被影响。
  * 所有写方法均通过基类 [AbstractReceptionService] 包装为单事务。
  * [saveByActivity] 借助活动实体的 orphanRemoval 级联清理被移除的住宿记录与旧住宿分组。
+ *
+ * 当前端将住宿分组与人员分组统一为 PERSON 类型时，可传入空 colorTags 列表；
+ * 此时住宿记录的分组引用按 id/名称/颜色回退解析到活动下既有（人员）分组，实现两端分组双向同步。
  */
 @Service
 class LodgingServiceImpl(
@@ -52,6 +55,8 @@ class LodgingServiceImpl(
      *    维护原始请求到归一化实体的映射，供后续住宿引用解析；
      * 3) 归一化住宿：按 id 复用既有实体做更新，否则新建；房间号、人员快照按请求覆盖，
      *    分组引用经 [ColorTag.resolveIn] 在「原始映射 / id / 名称 / 颜色」间多重解析；
+     *    当请求未携带住宿分组（住宿分组与人员分组共享 PERSON 类型时为空列表）时，
+     *    按 id/名称/颜色回退到活动下既有分组（含人员分组），保证住宿引用可解析；
      * 4) 清空 [Activities.hostedList] 与 [Activities.colorTagList]，先写回保留的非住宿分组，再追加归一化住宿分组与住宿；
      * 5) 保存活动后返回住宿分组与住宿两份结果。
      * 全程记录关键步骤日志与样本 id，便于排障。
@@ -81,6 +86,10 @@ class LodgingServiceImpl(
         val existingColorTagsById = existingLodgingColorTags.mapNotNull { colorTag ->
             colorTag.id?.let { it to colorTag }
         }.toMap()
+        val existingColorTagsAny = activity.colorTagList.toList()
+        val existingColorTagsByIdAny = existingColorTagsAny
+            .mapNotNull { colorTag -> colorTag.id?.let { id -> id to colorTag } }
+            .toMap()
         val existingColorTagsByName = existingLodgingColorTags.associateByName()
         val existingColorTagsByColor = existingLodgingColorTags.associateByColor()
         val existingLodgingsById = activity.hostedList.mapNotNull { lodging ->
@@ -148,6 +157,8 @@ class LodgingServiceImpl(
                 sourceColorTagsById,
                 normalizedColorTagsById,
                 normalizedColorTags,
+                existingColorTagsByIdAny,
+                existingColorTagsAny,
             )
             targetLodging
         }
@@ -185,12 +196,17 @@ class LodgingServiceImpl(
         sourceColorTagsById: Map<Int, ColorTag>,
         colorTagsById: Map<Int, ColorTag>,
         colorTags: List<ColorTag>,
+        existingColorTagsByIdAny: Map<Int, ColorTag>,
+        existingColorTagsAny: List<ColorTag>,
     ): ColorTag? =
         originalToNormalizedColorTags[this]
             ?: id?.let(sourceColorTagsById::get)
             ?: id?.let(colorTagsById::get)
+            ?: id?.let(existingColorTagsByIdAny::get)
             ?: name?.let { colorTagName -> colorTags.firstOrNull { it.name == colorTagName } }
             ?: color?.let { colorValue -> colorTags.firstOrNull { it.color == colorValue } }
+            ?: name?.let { colorTagName -> existingColorTagsAny.firstOrNull { it.name == colorTagName } }
+            ?: color?.let { colorValue -> existingColorTagsAny.firstOrNull { it.color == colorValue } }
 
     private fun ColorTag.isLodgingType(): Boolean =
         type.isNullOrBlank() || type.equals(ColorTag.TYPE_LODGING, ignoreCase = true)

@@ -5,7 +5,8 @@ management:
   # 禁用全部 actuator 端点（health/info 等在 HTTP 与 JMX 上均不可用）。
   # LoginWebConfig 虽放行 /actuator/**，但端点本身被禁用，无任何信息泄露。
   endpoints:
-    enabled-by-default: false
+    access:
+      default: none
 
 spring:
   config:

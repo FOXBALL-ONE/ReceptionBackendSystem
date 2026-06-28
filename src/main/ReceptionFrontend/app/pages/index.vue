@@ -204,6 +204,21 @@
                   <n-button
                     size="small"
                     secondary
+                    @click="handleCopyAccessUrl(event)"
+                  >
+                    复制访问地址
+                  </n-button>
+                  <n-button
+                    size="small"
+                    secondary
+                    type="info"
+                    @click="handleOpenAccessUrl(event)"
+                  >
+                    打开页面
+                  </n-button>
+                  <n-button
+                    size="small"
+                    secondary
                     type="warning"
                     :loading="closingEventId === event.id"
                     :disabled="event.status === 'closed'"
@@ -726,6 +741,25 @@ const openQrCodeUrl = () => {
   window.open(qrCodeTargetUrl.value, '_blank', 'noopener,noreferrer')
 }
 
+// 访问地址与活动二维码一致：${publicBaseUrl}/s/${path}
+const handleCopyAccessUrl = async (event: EventDisplayItem) => {
+  const url = buildQrCodeTargetUrl(event.path)
+  const ok = await copyToClipboard(url)
+  if (ok) {
+    message.success('访问地址已复制')
+  } else {
+    message.warning('复制失败，请手动复制地址')
+  }
+}
+
+const handleOpenAccessUrl = (event: EventDisplayItem) => {
+  if (!import.meta.client) {
+    return
+  }
+
+  window.open(buildQrCodeTargetUrl(event.path), '_blank', 'noopener,noreferrer')
+}
+
 const handleCloseEvent = async (event: EventDisplayItem) => {
   if (event.status === 'closed') {
     return
@@ -992,7 +1026,7 @@ onMounted(() => {
 }
 
 .col-actions {
-  width: 300px;
+  width: 380px;
 }
 
 /* 响应式优化 */
