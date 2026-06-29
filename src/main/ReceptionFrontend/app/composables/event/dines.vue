@@ -10,11 +10,12 @@
         </n-button>
       </template>
 
-      <n-empty v-if="meals.length === 0" description="暂无用餐安排">
-        <template #extra>
-          <n-button type="primary" @click="addMeal">添加用餐</n-button>
-        </template>
-      </n-empty>
+      <n-spin :show="loading">
+        <n-empty v-if="meals.length === 0" description="暂无用餐安排">
+          <template #extra>
+            <n-button type="primary" @click="addMeal">添加用餐</n-button>
+          </template>
+        </n-empty>
 
       <n-space v-else vertical :size="12">
         <section v-for="(meal, index) in meals" :key="meal.id" class="meal-panel">
@@ -79,6 +80,7 @@
           </n-form>
         </section>
       </n-space>
+      </n-spin>
     </n-card>
 
     <n-flex justify="end" class="footer-actions">
@@ -314,6 +316,8 @@ async function saveMeals() {
 onMounted(() => {
   if (eventId?.value) {
     loadMealsData()
+  } else {
+    meals.value = [createMeal()]
   }
 })
 

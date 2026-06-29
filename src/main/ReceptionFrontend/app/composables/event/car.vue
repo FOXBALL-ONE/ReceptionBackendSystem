@@ -17,11 +17,12 @@
         {{ peopleError }}
       </n-alert>
 
-      <n-empty v-if="vehicles.length === 0" description="暂无车辆安排">
-        <template #extra>
-          <n-button type="primary" @click="addVehicle">添加车辆</n-button>
-        </template>
-      </n-empty>
+      <n-spin :show="loading">
+        <n-empty v-if="vehicles.length === 0" description="暂无车辆安排">
+          <template #extra>
+            <n-button type="primary" @click="addVehicle">添加车辆</n-button>
+          </template>
+        </n-empty>
 
       <n-space v-else vertical :size="14">
         <section v-for="(vehicle, vehicleIndex) in vehicles" :key="vehicle.id" class="vehicle-panel">
@@ -151,6 +152,7 @@
           </div>
         </section>
       </n-space>
+      </n-spin>
     </n-card>
 
     <n-flex justify="end" class="footer-actions">
@@ -236,7 +238,8 @@ const people = ref<PersonOption[]>([]);
 const peopleLoading = ref(false);
 const peopleError = ref("");
 const saving = ref(false);
-const vehicles = ref<VehicleArrangement[]>([createVehicle()]);
+const loading = ref(false);
+const vehicles = ref<VehicleArrangement[]>([]);
 
 const personMap = computed(() => new Map(people.value.map((person) => [person.id, person])));
 
@@ -427,6 +430,7 @@ async function fetchPeople() {
 const loadCarData = async () => {
   if (!eventId?.value) return
 
+  loading.value = true
   try {
     const cars = await eventApi.getCarsByActivity(eventId.value)
 
@@ -463,6 +467,8 @@ const loadCarData = async () => {
   } catch (error: any) {
     message.error(error.message || '加载车辆数据失败')
     vehicles.value = [createVehicle()]
+  } finally {
+    loading.value = false
   }
 }
 
@@ -556,6 +562,8 @@ onMounted(() => {
   if (eventId?.value) {
     void fetchPeople();
     loadCarData();
+  } else {
+    vehicles.value = [createVehicle()]
   }
 });
 

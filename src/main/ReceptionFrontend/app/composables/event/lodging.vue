@@ -72,11 +72,12 @@
         </n-button>
       </div>
 
-      <n-empty v-if="lodgings.length === 0" description="暂无住宿安排">
-        <template #extra>
-          <n-button type="primary" @click="addLodging">手动添加</n-button>
-        </template>
-      </n-empty>
+      <n-spin :show="loading">
+        <n-empty v-if="lodgings.length === 0" description="暂无住宿安排">
+          <template #extra>
+            <n-button type="primary" @click="addLodging">手动添加</n-button>
+          </template>
+        </n-empty>
 
       <n-space v-else vertical :size="14">
         <section v-for="(lodging, index) in lodgings" :key="lodging.id" class="lodging-panel">
@@ -145,6 +146,7 @@
           </n-form>
         </section>
       </n-space>
+      </n-spin>
     </n-card>
 
     <n-flex justify="end" class="footer-actions">
@@ -245,7 +247,7 @@ const people = ref<PersonOption[]>([]);
 const peopleLoading = ref(false);
 const peopleError = ref("");
 const pendingPersonId = ref<string | null>(null);
-const lodgings = ref<LodgingRecord[]>([createLodging()]);
+const lodgings = ref<LodgingRecord[]>([]);
 const loading = ref(false);
 const saving = ref(false);
 
@@ -691,6 +693,8 @@ onMounted(() => {
   if (eventId?.value) {
     void fetchPeople();
     loadLodgingData();
+  } else {
+    lodgings.value = [createLodging()]
   }
 });
 

@@ -164,7 +164,7 @@ const overview = ref<OverviewContent>({
   title: "",
   heroImageUrl: "",
 });
-const paragraphs = ref<OverviewParagraph[]>([createParagraph()]);
+const paragraphs = ref<OverviewParagraph[]>([]);
 const overviewId = ref<number | string | null>(null);
 const loading = ref(false);
 const saving = ref(false);

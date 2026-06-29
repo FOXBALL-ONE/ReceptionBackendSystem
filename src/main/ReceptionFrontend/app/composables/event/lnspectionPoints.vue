@@ -136,7 +136,7 @@ const idCounters = {
 
 const objectUrls = new Set<string>();
 
-const inspectionPoints = ref<InspectionPoint[]>([createInspectionPoint()]);
+const inspectionPoints = ref<InspectionPoint[]>([]);
 const loading = ref(false);
 const saving = ref(false);
 
@@ -377,6 +377,8 @@ async function saveInspectionPoints() {
 onMounted(() => {
   if (eventId?.value) {
     loadInspectionPointsData()
+  } else {
+    inspectionPoints.value = [createInspectionPoint()]
   }
 })
 

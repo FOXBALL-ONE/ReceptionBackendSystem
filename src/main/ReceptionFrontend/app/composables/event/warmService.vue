@@ -43,11 +43,12 @@
         </n-button>
       </div>
 
-      <n-empty v-if="weatherItems.length === 0" description="暂无天气">
-        <template #extra>
-          <n-button type="primary" @click="addWeather">添加天气</n-button>
-        </template>
-      </n-empty>
+      <n-spin :show="loading">
+        <n-empty v-if="weatherItems.length === 0" description="暂无天气">
+          <template #extra>
+            <n-button type="primary" @click="addWeather">添加天气</n-button>
+          </template>
+        </n-empty>
 
       <n-space v-else vertical :size="12">
         <section v-for="(weather, index) in weatherItems" :key="weather.id" class="item-panel">
@@ -112,6 +113,7 @@
           </n-form>
         </section>
       </n-space>
+      </n-spin>
     </n-card>
 
     <ConferenceNoticeMode
@@ -228,7 +230,7 @@ const conferenceNotice = ref<ConferenceNotice>({
   title: "",
   content: "",
 });
-const weatherItems = ref<WeatherItem[]>([createWeatherItem()]);
+const weatherItems = ref<WeatherItem[]>([]);
 const staffGroups = ref<StaffGroup[]>([createStaffGroup("会务组")]);
 const warmTips = ref<WarmTip[]>([createWarmTip()]);
 const weatherLocation = ref("");
@@ -593,6 +595,8 @@ async function saveWarmService() {
 onMounted(() => {
   if (eventId?.value) {
     loadWarmServiceData()
+  } else {
+    weatherItems.value = [createWeatherItem()]
   }
 })
 

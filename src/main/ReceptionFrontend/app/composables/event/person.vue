@@ -58,11 +58,12 @@
         {{ groupsError }}
       </n-alert>
 
-      <n-empty v-if="people.length === 0" description="暂无人员">
-        <template #extra>
-          <n-button type="primary" @click="addPerson">添加人员</n-button>
-        </template>
-      </n-empty>
+      <n-spin :show="loading">
+        <n-empty v-if="people.length === 0" description="暂无人员">
+          <template #extra>
+            <n-button type="primary" @click="addPerson">添加人员</n-button>
+          </template>
+        </n-empty>
 
       <div v-else-if="groupByColor" class="color-group-list">
         <section v-for="group in colorGroupedPeople" :key="group.key" class="color-group-panel">
@@ -198,6 +199,7 @@
           </n-button>
         </div>
       </n-space>
+      </n-spin>
     </n-card>
 
     <n-flex justify="end" :size="12">
@@ -266,7 +268,7 @@ const typeColors = ["#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#7c3aed", "#089
 
 const inspectionGroups = ref<InspectionGroupOption[]>([]);
 const colorTags = ref<ColorTagOption[]>([]);
-const people = ref<PersonRecord[]>([createPerson()]);
+const people = ref<PersonRecord[]>([]);
 const groupsLoading = ref(false);
 const groupsError = ref("");
 const colorTagsLoading = ref(false);
@@ -683,6 +685,8 @@ async function loadPageData() {
 onMounted(() => {
   if (eventId?.value) {
     void loadPageData()
+  } else {
+    people.value = [createPerson()]
   }
 });
 
