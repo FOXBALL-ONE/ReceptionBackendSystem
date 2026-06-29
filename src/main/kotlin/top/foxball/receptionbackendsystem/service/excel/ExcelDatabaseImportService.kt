@@ -284,7 +284,8 @@ class ExcelDatabaseImportService(
     private fun InspectionPointsItem.toInspectionPoint(activity: Activities): InspectionPoint =
         InspectionPoint(
             activity = activity,
-            description = listOfNotNull(name?.trimToNull(), description?.trimToNull()).joinToString("\n"),
+            name = name?.trimToNull(),
+            description = description?.trimToNull(),
         )
 
     private fun ExcelOverviewItem.toOverview(activity: Activities): OverviewOfTheCityAndCounty =

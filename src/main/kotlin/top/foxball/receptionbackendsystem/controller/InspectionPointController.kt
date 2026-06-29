@@ -26,121 +26,59 @@ class InspectionPointController(
     private val inspectionPointService: InspectionPointService,
     private val builder: ResponseBuilder,
 ) : ControllerSupport(builder) {
+
+    /** 考察点对外响应视图。 */
+    private data class Response(
+        val id: Int?,
+        val activityId: Long?,
+        val name: String?,
+        val imageURL: String?,
+        val description: String?,
+    )
+
+    /** 把考察点实体映射为响应视图。 */
+    private fun InspectionPoint.toResponse() = Response(
+        id = id,
+        activityId = activity?.id,
+        name = name,
+        imageURL = imageURL,
+        description = description,
+    )
+
     /** 按活动整体保存考察点，覆盖该活动下既有记录。 */
     @PostMapping("/save")
     fun saveByActivity(@RequestBody request: InspectionPointSaveRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val inspectionPoints = inspectionPointService.saveByActivity(activityId, request.inspectionPoints)
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = inspectionPoints.map { inspectionPoint ->
-            Response(
-                id = inspectionPoint.id,
-                activityId = inspectionPoint.activity?.id,
-                imageURL = inspectionPoint.imageURL,
-                description = inspectionPoint.description,
-            )
-        }
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoints.map { it.toResponse() }).build()
     }
 
     /** 新增单条考察点并返回。 */
     @PostMapping("/save-one")
     fun saveOne(@RequestBody entity: InspectionPoint): ResponseEntity<ApiResponse> {
         val inspectionPoint = inspectionPointService.saveOne(entity)
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = Response(
-            id = inspectionPoint.id,
-            activityId = inspectionPoint.activity?.id,
-            imageURL = inspectionPoint.imageURL,
-            description = inspectionPoint.description,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoint.toResponse()).build()
     }
 
     /** 批量新增考察点并返回。 */
     @PostMapping("/save-batch")
     fun saveBatch(@RequestBody request: EntityBatchRequest<InspectionPoint>): ResponseEntity<ApiResponse> {
         val inspectionPoints = inspectionPointService.saveBatch(request.items)
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = inspectionPoints.map { inspectionPoint ->
-            Response(
-                id = inspectionPoint.id,
-                activityId = inspectionPoint.activity?.id,
-                imageURL = inspectionPoint.imageURL,
-                description = inspectionPoint.description,
-            )
-        }
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoints.map { it.toResponse() }).build()
     }
 
     /** 更新单条考察点并返回。 */
     @PostMapping("/update-one")
     fun updateOne(@RequestBody entity: InspectionPoint): ResponseEntity<ApiResponse> {
         val inspectionPoint = inspectionPointService.updateOne(entity)
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = Response(
-            id = inspectionPoint.id,
-            activityId = inspectionPoint.activity?.id,
-            imageURL = inspectionPoint.imageURL,
-            description = inspectionPoint.description,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoint.toResponse()).build()
     }
 
     /** 批量更新考察点并返回。 */
     @PostMapping("/update-batch")
     fun updateBatch(@RequestBody request: EntityBatchRequest<InspectionPoint>): ResponseEntity<ApiResponse> {
         val inspectionPoints = inspectionPointService.updateBatch(request.items)
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = inspectionPoints.map { inspectionPoint ->
-            Response(
-                id = inspectionPoint.id,
-                activityId = inspectionPoint.activity?.id,
-                imageURL = inspectionPoint.imageURL,
-                description = inspectionPoint.description,
-            )
-        }
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoints.map { it.toResponse() }).build()
     }
 
     /** 按 id 删除单条考察点。 */
@@ -158,22 +96,7 @@ class InspectionPointController(
     fun findById(@RequestBody request: IntIdRequest): ResponseEntity<ApiResponse> {
         val id = request.id ?: return badRequest("id is required")
         val inspectionPoint = inspectionPointService.findEntityById(id) ?: return notFound("entity not found")
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = Response(
-            id = inspectionPoint.id,
-            activityId = inspectionPoint.activity?.id,
-            imageURL = inspectionPoint.imageURL,
-            description = inspectionPoint.description,
-        )
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoint.toResponse()).build()
     }
 
     /** 按活动 id 查询该活动下所有考察点。 */
@@ -181,23 +104,6 @@ class InspectionPointController(
     fun findByActivityId(@RequestBody request: ActivityIdRequest): ResponseEntity<ApiResponse> {
         val activityId = request.activityId ?: return badRequest("activityId is required")
         val inspectionPoints = inspectionPointService.findByActivityId(activityId)
-
-        data class Response(
-            val id: Int?,
-            val activityId: Long?,
-            val imageURL: String?,
-            val description: String?,
-        )
-
-        val rs = inspectionPoints.map { inspectionPoint ->
-            Response(
-                id = inspectionPoint.id,
-                activityId = inspectionPoint.activity?.id,
-                imageURL = inspectionPoint.imageURL,
-                description = inspectionPoint.description,
-            )
-        }
-
-        return builder.ok().data(rs).build()
+        return builder.ok().data(inspectionPoints.map { it.toResponse() }).build()
     }
 }

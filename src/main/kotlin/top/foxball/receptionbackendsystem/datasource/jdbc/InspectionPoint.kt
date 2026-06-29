@@ -26,6 +26,10 @@ class InspectionPoint(
     @OnDelete(action = OnDeleteAction.CASCADE)
     var activity: Activities? = null,
 
+    /** 考察点名称。 */
+    @Column(name = "name", length = 255)
+    var name: String? = null,
+
     /** 考察点图片地址。 */
     @Column(name = "image_url", length = 1024)
     var imageURL: String? = null,

@@ -42,6 +42,5 @@ class InspectionPointsExcelService {
     }
 
     private fun InspectionPointsItem.isBlankRow(): Boolean =
-        name.isNullOrBlank() &&
-            description.isNullOrBlank()
+        name.isNullOrBlank() && description.isNullOrBlank()
 }

@@ -197,10 +197,9 @@ class ExcelDatabaseExportService(
 
     private fun Activities.toInspectionPointRows(): List<InspectionPointsItem> =
         inspectionPoints.mapIndexed { index, point ->
-            val parts = point.description?.split("\n", limit = 2) ?: emptyList()
             InspectionPointsItem(
-                name = parts.getOrNull(0) ?: "考察点${index + 1}",
-                description = parts.getOrNull(1) ?: point.description,
+                name = point.name?.takeIf { it.isNotBlank() } ?: "考察点${index + 1}",
+                description = point.description,
             )
         }
 

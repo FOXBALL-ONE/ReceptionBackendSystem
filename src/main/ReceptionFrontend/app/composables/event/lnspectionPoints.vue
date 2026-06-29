@@ -213,6 +213,7 @@ function normalizeInspectionPoints(response: any): InspectionPoint[] {
   return pickList(response, "records", "rows", "list", "items", "inspectionPoints", "data")
     .map((point) => createInspectionPoint({
       backendId: normalizeBackendId(point?.id),
+      name: String(point?.name ?? "").trim(),
       imageUrl: String(point?.imageURL ?? "").trim(),
       introduction: String(point?.description ?? "").trim(),
     }));
@@ -316,14 +317,16 @@ function buildSavePayload() {
     inspectionPoints: inspectionPoints.value
       .map((point) => {
         const imageURL = point.imageUrl.startsWith("blob:") ? "" : point.imageUrl.trim();
-        const description = point.introduction.trim() || point.name.trim();
+        const name = point.name.trim();
+        const description = point.introduction.trim();
 
-        if (!point.backendId && !imageURL && !description) {
+        if (!point.backendId && !name && !imageURL && !description) {
           return null;
         }
 
         return {
           ...(point.backendId ? { id: point.backendId } : {}),
+          name,
           imageURL,
           description,
         };

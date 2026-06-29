@@ -43,6 +43,7 @@ class InspectionPointServiceImpl(
         val normalizedInspectionPoints = inspectionPoints.map { inspectionPoint ->
             val targetInspectionPoint = inspectionPoint.id?.let(existingInspectionPointsById::get) ?: InspectionPoint()
             targetInspectionPoint.activity = activity
+            targetInspectionPoint.name = inspectionPoint.name
             targetInspectionPoint.imageURL = inspectionPoint.imageURL
             targetInspectionPoint.description = inspectionPoint.description
             targetInspectionPoint
